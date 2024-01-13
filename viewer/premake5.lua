@@ -24,6 +24,10 @@ project "viewer"
        systemversion "latest"
        defines { "WINDOWS" }
 
+   filter "system:macosx"
+       systemversion "latest"
+       defines { "MACOS" }
+
    filter "configurations:Debug"
        kind "ConsoleApp"
        defines { "DEBUG" }

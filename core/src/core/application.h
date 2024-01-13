@@ -6,11 +6,11 @@
 typedef struct {
 	int count;
 	char** args;
-} application_command_line_args;
+} command_line_args;
 
 typedef struct {
 	platform_specification platform_spec;
-	application_command_line_args command_line_args;
+	command_line_args command_line_args;
 } application_specification;
 
 typedef struct {

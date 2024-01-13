@@ -1,0 +1,1 @@
+../vendor/bin/Premake/macOS/premake5 xcode4

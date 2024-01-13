@@ -5,12 +5,14 @@ typedef struct {
 	application* app;
 
 	b8 running;
+	f64 last_frame_time;
 } internal_state;
 static internal_state s_state;
 
-void on_wnd_close(event* e)
+b8 on_wnd_close(event* e)
 {
 	application_close();
+	return TRUE;
 }
 
 void on_event(event e)
@@ -25,6 +27,8 @@ void application_init(application* app)
 {
 	s_state.app = app;
 
+	memory_init();
+
 	app->application_spec.platform_spec.msg_callback = on_event;
 	platform_init(&app->application_spec.platform_spec);
 
@@ -37,7 +41,11 @@ void application_run()
 {
 	while (s_state.running)
 	{
-		s_state.app->update(0.0f);
+		f64 time = platform_get_time();
+		f64 delta_time = time - s_state.last_frame_time;
+		s_state.last_frame_time = time;
+
+		s_state.app->update(delta_time);
 
 		platform_update();
 	}
@@ -53,4 +61,6 @@ void application_shutdown()
 	s_state.app->shutdown();
 
 	platform_shutdown();
+
+	memory_shutdown();
 }

@@ -3,14 +3,15 @@
 #include "core/application.h"
 #include "core/log.h"
 
-extern void application_create(application* app, application_command_line_args args);
+extern void application_create(application* app);
 
 int entry(int argc, char** argv)
 {
 	log_init();
 	application app = { 0 };
-	application_command_line_args args = { argc, argv };
-	application_create(&app, args);
+	app.application_spec.command_line_args.args = argv;
+	app.application_spec.command_line_args.count = argc;
+	application_create(&app);
 	application_init(&app);
 	application_run();
 	application_shutdown();
@@ -18,8 +19,8 @@ int entry(int argc, char** argv)
 	return 0;
 }
 
-#ifdef WINDOWS
 #ifdef DIST
+#ifdef WINDOWS
 #include <Windows.h>
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
@@ -27,6 +28,11 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmd
 	return entry(__argc, __argv);
 }
 
+#elif defined(MACOS)
+
+// TODO: Implement entry point for mac
+
+#endif
 #else
 
 int main(int argc, char** argv)
@@ -35,4 +41,3 @@ int main(int argc, char** argv)
 }
 
 #endif
-#endif 

@@ -1,6 +1,7 @@
-﻿.vs
-bin
+﻿.vs/
+/bin/
 *.user
 *.sln
 *.vcxproj
 *.filters
+viewer/log.txt

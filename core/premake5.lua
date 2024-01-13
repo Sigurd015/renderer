@@ -20,6 +20,10 @@ project "core"
        systemversion "latest"
        defines { "WINDOWS" }
 
+   filter "system:macosx"
+       systemversion "latest"
+       defines { "MACOS" }
+
    filter "configurations:Debug"
        defines { "DEBUG" }
        runtime "Debug"

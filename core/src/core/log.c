@@ -50,7 +50,7 @@ void log_output(log_level level, const char* type, const char* format, ...)
 	vsnprintf(logMessage, LOG_BUFFER_SIZE, format, args);
 	va_end(args);
 	
-#ifdef CORE_DIST
+#ifdef DIST
 	fprintf(log_file, ">%s-%s: %s\n", type, level_strings[level], logMessage);
 #else
 	log_to_console(level, type, logMessage);
