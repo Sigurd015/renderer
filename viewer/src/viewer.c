@@ -8,6 +8,9 @@ void viewer_init()
 void viewer_update(float deltatime)
 {
 	//APP_LOG_INFO("Viewer update - %f", deltatime);
+
+	vec4 color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
+	renderer_clear(color);
 }
 
 void viewer_shutdown()

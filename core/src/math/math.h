@@ -135,6 +135,8 @@ b32 vec4_equal(vec4 left, vec4 right);
 f32 vec4_dot(vec4 left, vec4 right);
 vec3 vec4_to_vec3(vec4 v);
 
+u32 vec4_to_u32(vec4 v);
+
 // -- Matrix types --
 typedef union
 {

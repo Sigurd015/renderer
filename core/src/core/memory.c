@@ -20,7 +20,7 @@ void memory_shutdown()
 
 void* memory_allocate(u64 size, memory_tag tag)
 {
-	CORE_ASSERT(tag == MEMORY_TAG_UNKNOWN, "memory_alloc - Tag not implemented");
+	CORE_ASSERT(tag != MEMORY_TAG_UNKNOWN, "memory_alloc - Tag not implemented");
 
 	s_stats.total_allocated += size;
 	s_stats.tagged_allocated[tag] += size;
@@ -33,7 +33,7 @@ void* memory_allocate(u64 size, memory_tag tag)
 
 void memory_free(void* block, u64 size, memory_tag tag)
 {
-	CORE_ASSERT(tag == MEMORY_TAG_UNKNOWN, "memory_free - Tag not implemented");
+	CORE_ASSERT(tag != MEMORY_TAG_UNKNOWN, "memory_free - Tag not implemented");
 
 	s_stats.total_allocated -= size;
 	s_stats.tagged_allocated[tag] -= size;

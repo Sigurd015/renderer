@@ -269,3 +269,14 @@ vec3 vec4_to_vec3(vec4 v)
 	result.z = v.z;
 	return result;
 }
+
+u32 vec4_to_u32(vec4 v)
+{
+	u8 r = (u8)(v.r * 255.0f);
+	u8 g = (u8)(v.g * 255.0f);
+	u8 b = (u8)(v.b * 255.0f);
+	u8 a = (u8)(v.a * 255.0f);
+
+	u32 color_u32 = (a << 24) | (b << 16) | (g << 8) | r;
+	return color_u32;
+}

@@ -3,6 +3,7 @@
 #ifdef WINDOWS
 #include "core/platform.h"
 #include "core/event.h"
+#include "renderer/renderer.h"
 
 #include <Windows.h>
 #include <Windowsx.h>
@@ -12,6 +13,7 @@
 typedef struct {
 	platform_specification spec;
 	HWND window_handle;
+	HDC memory_dc;
 
 	f64 clock_frequency;
 	LARGE_INTEGER clock_start;
@@ -122,6 +124,7 @@ LRESULT msg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void platform_init(platform_specification* spec)
 {
 	s_state.spec = *spec;
+
 	WNDCLASSEXA wndClass = {
 		sizeof(WNDCLASSEXA),
 		CS_OWNDC,
@@ -172,6 +175,8 @@ void platform_init(platform_specification* spec)
 
 	CORE_ASSERT(s_state.window_handle, "platform_init - CreateWindow Failed");
 
+	renderer_init();
+
 	ShowWindow(s_state.window_handle, SW_SHOW);
 
 	LARGE_INTEGER frequency;
@@ -193,6 +198,8 @@ void DispatchMsg()
 void platform_update()
 {
 	DispatchMsg();
+
+	renderer_swap_buffers();
 }
 
 void platform_shutdown()
@@ -221,6 +228,45 @@ f64 platform_get_time()
 	LARGE_INTEGER now_time;
 	QueryPerformanceCounter(&now_time);
 	return (f64)(now_time.QuadPart - s_state.clock_start.QuadPart) * s_state.clock_frequency;
+}
+
+// Renderer 
+image* platform_create_surface()
+{
+	image* surface = image_create(s_state.spec.width, s_state.spec.height);
+
+	HDC window_dc = GetDC(s_state.window_handle);
+	s_state.memory_dc = CreateCompatibleDC(window_dc);
+	ReleaseDC(s_state.window_handle, window_dc);
+
+	BITMAPINFOHEADER bi_header;
+	platform_zero_memory(&bi_header, sizeof(BITMAPINFOHEADER));
+	bi_header.biSize = sizeof(BITMAPINFOHEADER);
+	bi_header.biWidth = s_state.spec.width;
+	bi_header.biHeight = -s_state.spec.height;  /* top-down */
+	bi_header.biPlanes = 1;
+	bi_header.biBitCount = 32;
+	bi_header.biCompression = BI_RGB;
+	void* bits = image_get_data(surface);
+	HBITMAP dib_bitmap = CreateDIBSection(s_state.memory_dc, (BITMAPINFO*)&bi_header,
+		DIB_RGB_COLORS, (void**)&bits,
+		NULL, 0);
+
+	CORE_ASSERT(dib_bitmap, "platform_init - CreateDIBSection Failed");
+
+	HBITMAP old_bitmap = (HBITMAP)SelectObject(s_state.memory_dc, dib_bitmap);
+	DeleteObject(old_bitmap);
+	return surface;
+}
+
+void platform_present_surface(image* surface)
+{
+	CORE_ASSERT(s_state.spec.width == image_get_width(surface) && s_state.spec.height == image_get_height(surface),
+		"platform_present_surface - Surface dimensions do not match window dimensions");
+
+	HDC window_dc = GetDC(s_state.window_handle);
+	BitBlt(window_dc, 0, 0, s_state.spec.width, s_state.spec.height, s_state.memory_dc, 0, 0, SRCCOPY);
+	ReleaseDC(s_state.window_handle, window_dc);
 }
 
 // Memory
