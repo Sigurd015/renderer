@@ -270,13 +270,20 @@ vec3 vec4_to_vec3(vec4 v)
 	return result;
 }
 
-u32 vec4_to_u32(vec4 v)
+u32 vec4_to_u32(vec4 color, u32_color_type type)
 {
-	u8 r = (u8)(v.r * 255.0f);
-	u8 g = (u8)(v.g * 255.0f);
-	u8 b = (u8)(v.b * 255.0f);
-	u8 a = (u8)(v.a * 255.0f);
+	u8 r = (u8)(color.r * 255.0f);
+	u8 g = (u8)(color.g * 255.0f);
+	u8 b = (u8)(color.b * 255.0f);
+	u8 a = (u8)(color.a * 255.0f);
 
-	u32 color_u32 = (a << 24) | (b << 16) | (g << 8) | r;
-	return color_u32;
+	switch (type)
+	{
+	case U32_COLOR_TYPE_ARGB:
+		return (a << 24) | (r << 16) | (g << 8) | b;
+	case U32_COLOR_TYPE_RGBA:
+		return (r << 24) | (g << 16) | (b << 8) | a;
+	case U32_COLOR_TYPE_ABGR:
+		return (a << 24) | (b << 16) | (g << 8) | r;
+	}
 }

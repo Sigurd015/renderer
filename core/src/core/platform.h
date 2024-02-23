@@ -23,7 +23,6 @@ u32 platform_get_window_width();
 u32 platform_get_window_height();
 f64 platform_get_time();
 
-image* platform_create_surface();
 void platform_present_surface(image* surface);
 
 // Memory

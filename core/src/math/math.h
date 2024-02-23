@@ -135,7 +135,12 @@ b32 vec4_equal(vec4 left, vec4 right);
 f32 vec4_dot(vec4 left, vec4 right);
 vec3 vec4_to_vec3(vec4 v);
 
-u32 vec4_to_u32(vec4 v);
+typedef enum {
+	U32_COLOR_TYPE_RGBA,
+	U32_COLOR_TYPE_ARGB,
+	U32_COLOR_TYPE_ABGR
+} u32_color_type;
+u32 vec4_to_u32(vec4 color, u32_color_type type);
 
 // -- Matrix types --
 typedef union

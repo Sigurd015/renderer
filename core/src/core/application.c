@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "application.h"
+#include "renderer/renderer.h"
 
 typedef struct {
 	application* app;
@@ -60,6 +61,8 @@ void application_shutdown()
 {
 	s_state.app->shutdown();
 
+	// Notice renderer_init is called in platform_init
+	renderer_shutdown();
 	platform_shutdown();
 
 	memory_shutdown();

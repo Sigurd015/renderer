@@ -3,35 +3,26 @@
 #include "core/platform.h"
 
 typedef struct {
-	image* backbuffer;
-	image* frontbuffer;
-
+	image* buffer;
 } internal_state;
 static internal_state s_state;
 
-void renderer_init()
+void renderer_init(u32 width, u32 height, image_format format)
 {
-	s_state.backbuffer = platform_create_surface();
-	s_state.frontbuffer = image_create(image_get_width(s_state.backbuffer), image_get_height(s_state.backbuffer));
+	s_state.buffer = image_create(width, height, format, 0);
 }
 
 void renderer_swap_buffers()
 {
-	image_copy(s_state.backbuffer, s_state.frontbuffer);
-	platform_present_surface(s_state.backbuffer);
+	platform_present_surface(s_state.buffer);
 }
 
 void renderer_clear(vec4 color)
 {
-	byte* pixel = (byte*)image_get_data(s_state.frontbuffer);
+	image_fill(s_state.buffer, color);
+}
 
-	u32 color_u32 = vec4_to_u32(color);
-	for (u32 y = 0; y < image_get_height(s_state.frontbuffer); ++y)
-	{
-		for (u32 x = 0; x < image_get_width(s_state.frontbuffer); ++x)
-		{
-			*(u32*)pixel = color_u32;
-			pixel += 4;
-		}
-	}
+void renderer_shutdown()
+{
+	image_destroy(s_state.buffer);
 }

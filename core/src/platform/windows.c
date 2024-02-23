@@ -14,6 +14,7 @@ typedef struct {
 	platform_specification spec;
 	HWND window_handle;
 	HDC memory_dc;
+	byte* back_buffer;
 
 	f64 clock_frequency;
 	LARGE_INTEGER clock_start;
@@ -125,7 +126,9 @@ void platform_init(platform_specification* spec)
 {
 	s_state.spec = *spec;
 
-	WNDCLASSEXA wndClass = {
+	// Register Window Class and Create Window
+	{
+		WNDCLASSEXA wndClass = {
 		sizeof(WNDCLASSEXA),
 		CS_OWNDC,
 		msg_proc,
@@ -138,44 +141,69 @@ void platform_init(platform_specification* spec)
 		NULL,
 		CLASS_NAME,
 		NULL
-	};
+		};
 
-	b8 result = RegisterClassExA(&wndClass);
+		b8 result = RegisterClassExA(&wndClass);
 
-	CORE_ASSERT(result, "platform_init - RegisterClass Failed");
+		CORE_ASSERT(result, "platform_init - RegisterClass Failed");
 
-	DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+		DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
 
-	if (s_state.spec.minimizable)
-		style |= WS_MINIMIZEBOX;
+		if (s_state.spec.minimizable)
+			style |= WS_MINIMIZEBOX;
 
-	if (s_state.spec.maximizable)
-		style |= WS_MAXIMIZEBOX;
+		if (s_state.spec.maximizable)
+			style |= WS_MAXIMIZEBOX;
 
-	if (s_state.spec.resizable)
-		style |= WS_THICKFRAME;
+		if (s_state.spec.resizable)
+			style |= WS_THICKFRAME;
 
-	RECT rect = { 0, 0, s_state.spec.width, s_state.spec.height };
-	AdjustWindowRect(&rect, style, FALSE);
+		RECT rect = { 0, 0, s_state.spec.width, s_state.spec.height };
+		AdjustWindowRect(&rect, style, FALSE);
 
-	s_state.window_handle = CreateWindowExA(
-		0,
-		wndClass.lpszClassName,
-		s_state.spec.name,
-		style,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		rect.right - rect.left,
-		rect.bottom - rect.top,
-		NULL,
-		NULL,
-		wndClass.hInstance,
-		NULL
-	);
+		s_state.window_handle = CreateWindowExA(
+			0,
+			wndClass.lpszClassName,
+			s_state.spec.name,
+			style,
+			CW_USEDEFAULT,
+			CW_USEDEFAULT,
+			rect.right - rect.left,
+			rect.bottom - rect.top,
+			NULL,
+			NULL,
+			wndClass.hInstance,
+			NULL
+		);
 
-	CORE_ASSERT(s_state.window_handle, "platform_init - CreateWindow Failed");
+		CORE_ASSERT(s_state.window_handle, "platform_init - CreateWindow Failed");
+	}
 
-	renderer_init();
+	// Create Back Buffer
+	{
+		HDC window_dc = GetDC(s_state.window_handle);
+		s_state.memory_dc = CreateCompatibleDC(window_dc);
+		ReleaseDC(s_state.window_handle, window_dc);
+
+		BITMAPINFOHEADER bi_header;
+		platform_zero_memory(&bi_header, sizeof(BITMAPINFOHEADER));
+		bi_header.biSize = sizeof(BITMAPINFOHEADER);
+		bi_header.biWidth = s_state.spec.width;
+		bi_header.biHeight = -s_state.spec.height;  /* top-down */
+		bi_header.biPlanes = 1;
+		bi_header.biBitCount = 32;
+		bi_header.biCompression = BI_RGB;
+		HBITMAP dib_bitmap = CreateDIBSection(s_state.memory_dc, (BITMAPINFO*)&bi_header,
+			DIB_RGB_COLORS, (void**)&s_state.back_buffer, NULL, 0);
+
+		CORE_ASSERT(dib_bitmap, "platform_init - CreateDIBSection Failed");
+
+		HBITMAP old_bitmap = (HBITMAP)SelectObject(s_state.memory_dc, dib_bitmap);
+		DeleteObject(old_bitmap);
+	}
+
+	// Notice format is ARGB
+	renderer_init(s_state.spec.width, s_state.spec.height, IMAGE_FORMAT_ARGB);
 
 	ShowWindow(s_state.window_handle, SW_SHOW);
 
@@ -206,6 +234,8 @@ void platform_shutdown()
 {
 	if (s_state.window_handle)
 		DestroyWindow(s_state.window_handle);
+	if (s_state.memory_dc)
+		DeleteDC(s_state.memory_dc);
 }
 
 void* platform_get_window_handle()
@@ -231,38 +261,14 @@ f64 platform_get_time()
 }
 
 // Renderer 
-image* platform_create_surface()
-{
-	image* surface = image_create(s_state.spec.width, s_state.spec.height);
-
-	HDC window_dc = GetDC(s_state.window_handle);
-	s_state.memory_dc = CreateCompatibleDC(window_dc);
-	ReleaseDC(s_state.window_handle, window_dc);
-
-	BITMAPINFOHEADER bi_header;
-	platform_zero_memory(&bi_header, sizeof(BITMAPINFOHEADER));
-	bi_header.biSize = sizeof(BITMAPINFOHEADER);
-	bi_header.biWidth = s_state.spec.width;
-	bi_header.biHeight = -s_state.spec.height;  /* top-down */
-	bi_header.biPlanes = 1;
-	bi_header.biBitCount = 32;
-	bi_header.biCompression = BI_RGB;
-	void* bits = image_get_data(surface);
-	HBITMAP dib_bitmap = CreateDIBSection(s_state.memory_dc, (BITMAPINFO*)&bi_header,
-		DIB_RGB_COLORS, (void**)&bits,
-		NULL, 0);
-
-	CORE_ASSERT(dib_bitmap, "platform_init - CreateDIBSection Failed");
-
-	HBITMAP old_bitmap = (HBITMAP)SelectObject(s_state.memory_dc, dib_bitmap);
-	DeleteObject(old_bitmap);
-	return surface;
-}
-
 void platform_present_surface(image* surface)
 {
-	CORE_ASSERT(s_state.spec.width == image_get_width(surface) && s_state.spec.height == image_get_height(surface),
-		"platform_present_surface - Surface dimensions do not match window dimensions");
+	CORE_ASSERT(s_state.spec.width == image_get_width(surface) &&
+		s_state.spec.height == image_get_height(surface) &&
+		image_get_format(surface) == IMAGE_FORMAT_ARGB,
+		"platform_present_surface - Invalid surface");
+
+	image_copy_to_data(surface, s_state.back_buffer);
 
 	HDC window_dc = GetDC(s_state.window_handle);
 	BitBlt(window_dc, 0, 0, s_state.spec.width, s_state.spec.height, s_state.memory_dc, 0, 0, SRCCOPY);
