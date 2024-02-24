@@ -8,6 +8,14 @@ typedef struct {
 } memory_stats;
 static memory_stats s_stats;
 
+const char* memory_block_str[MEMORY_TAG_COUNT] = {
+	"Unknown",
+	"Array",
+	"DArray",
+	"String",
+	"Image"
+};
+
 void memory_init()
 {
 	platform_zero_memory(&s_stats, sizeof(s_stats));
@@ -15,7 +23,22 @@ void memory_init()
 
 void memory_shutdown()
 {
-
+#ifndef DIST
+	if (s_stats.total_allocated)
+	{
+		CORE_LOG_ERROR("Memory leak detected");
+		for (u32 i = 0; i < MEMORY_TAG_COUNT; i++)
+		{
+			if (s_stats.tagged_allocated[i])
+			{
+				CORE_LOG_ERROR("--Leak by tag %s: %d", memory_block_str[i], s_stats.tagged_allocated[i]);
+				CORE_LOG_ERROR("--Leak by tag %s: %d KB", memory_block_str[i], s_stats.tagged_allocated[i] / 1024);
+				CORE_LOG_ERROR("--Leak by tag %s: %d MB", memory_block_str[i], s_stats.tagged_allocated[i] / (1024 * 1024));
+				CORE_LOG_ERROR("--Leak by tag %s: %d GB", memory_block_str[i], s_stats.tagged_allocated[i] / (1024 * 1024 * 1024));
+			}
+		}
+	}
+#endif 
 }
 
 void* memory_allocate(u64 size, memory_tag tag)

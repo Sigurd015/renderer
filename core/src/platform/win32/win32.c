@@ -16,6 +16,9 @@ typedef struct {
 	HDC memory_dc;
 	byte* back_buffer;
 
+	b8 previous_key_state[256];
+	b8 current_key_state[256];
+
 	f64 clock_frequency;
 	LARGE_INTEGER clock_start;
 } internal_state;
@@ -32,6 +35,25 @@ LRESULT msg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		s_state.spec.msg_callback(e);
 		return 0;
 	}
+	case WM_SIZE:
+	{
+		// Skip the first WM_SIZE message, it's sent before the window is shown
+		{
+			static b8 first_time = TRUE;
+			if (first_time)
+			{
+				first_time = FALSE;
+				return 0;
+			}
+		}
+
+		event_context context = { 0 };
+		context.wnd_resize.width = LOWORD(lParam);
+		context.wnd_resize.height = HIWORD(lParam);
+		event e = event_create(EVENT_TYPE_WINDOW_RESIZE, context);
+		s_state.spec.msg_callback(e);
+		return 0;
+	}
 	case WM_DESTROY:
 	{
 		PostQuitMessage(0);
@@ -40,15 +62,21 @@ LRESULT msg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_SYSKEYDOWN:
 	case WM_KEYDOWN:
 	{
+		event_context context = { 0 };
+		context.key_pressed.key = (key_code)wParam;
+		context.key_pressed.repeat = lParam & 0x40000000 ? TRUE : FALSE;
+		event e = event_create(EVENT_TYPE_KEY_PRESSED, context);
+		s_state.spec.msg_callback(e);
+		return 0;
 		return 0;
 	}
 	case WM_SYSKEYUP:
 	case WM_KEYUP:
 	{
-		return 0;
-	}
-	case WM_CHAR:
-	{
+		event_context context = { 0 };
+		context.key_released.key = (key_code)wParam;
+		event e = event_create(EVENT_TYPE_KEY_RELEASED, context);
+		s_state.spec.msg_callback(e);
 		return 0;
 	}
 	case WM_RBUTTONDOWN:
@@ -202,15 +230,21 @@ void platform_init(platform_specification* spec)
 		DeleteObject(old_bitmap);
 	}
 
-	// Notice format is ARGB
-	renderer_init(s_state.spec.width, s_state.spec.height, IMAGE_FORMAT_ARGB);
+	// Initialize Renderer and Show Window
+	{
+		// Notice format is ARGB
+		renderer_init(s_state.spec.width, s_state.spec.height, U32_COLOR_TYPE_ARGB);
 
-	ShowWindow(s_state.window_handle, SW_SHOW);
+		ShowWindow(s_state.window_handle, SW_SHOW);
+	}
 
-	LARGE_INTEGER frequency;
-	QueryPerformanceFrequency(&frequency);
-	s_state.clock_frequency = 1.0f / (f64)frequency.QuadPart;
-	QueryPerformanceCounter(&s_state.clock_start);
+	// Clock
+	{
+		LARGE_INTEGER frequency;
+		QueryPerformanceFrequency(&frequency);
+		s_state.clock_frequency = 1.0f / (f64)frequency.QuadPart;
+		QueryPerformanceCounter(&s_state.clock_start);
+	}
 }
 
 void DispatchMsg()
@@ -260,15 +294,58 @@ f64 platform_get_time()
 	return (f64)(now_time.QuadPart - s_state.clock_start.QuadPart) * s_state.clock_frequency;
 }
 
-// Renderer 
-void platform_present_surface(image* surface)
+// Input
+void platform_input_update()
 {
-	CORE_ASSERT(s_state.spec.width == image_get_width(surface) &&
-		s_state.spec.height == image_get_height(surface) &&
-		image_get_format(surface) == IMAGE_FORMAT_ARGB,
-		"platform_present_surface - Invalid surface");
+	for (u32 KeyCode = 0; KeyCode < 256; KeyCode++)
+	{
+		s_state.previous_key_state[KeyCode] = s_state.current_key_state[KeyCode];
+		s_state.current_key_state[KeyCode] = GetAsyncKeyState(KeyCode) & 0x8000;
+	}
+}
 
-	image_copy_to_data(surface, s_state.back_buffer);
+b8 platform_is_key(key_code key)
+{
+	return s_state.current_key_state[key] && s_state.previous_key_state[key];
+}
+
+b8 platform_is_key_down(key_code key)
+{
+	return s_state.current_key_state[key] && !s_state.previous_key_state[key];
+}
+
+b8 platform_is_mouse_button(mouse_button button)
+{
+	return s_state.current_key_state[button] && s_state.previous_key_state[button];
+}
+
+b8 platform_is_mouse_button_down(mouse_button button)
+{
+	return s_state.current_key_state[button] && !s_state.previous_key_state[button];
+}
+
+vec2 platform_get_mouse_position()
+{
+	POINT point;
+	GetCursorPos(&point);
+	ScreenToClient(s_state.window_handle, &point);
+	return vec2_create((f32)point.x, (f32)point.y);
+}
+
+void platform_set_cursor(b8 visible)
+{
+	ShowCursor(visible);
+}
+
+// Renderer 
+void platform_present(image* buffer)
+{
+	CORE_ASSERT(s_state.spec.width == image_get_width(buffer) &&
+		s_state.spec.height == image_get_height(buffer) &&
+		image_get_format(buffer) == U32_COLOR_TYPE_ARGB,
+		"platform_present - Invalid buffer");
+
+	image_copy_to_data(buffer, s_state.back_buffer);
 
 	HDC window_dc = GetDC(s_state.window_handle);
 	BitBlt(window_dc, 0, 0, s_state.spec.width, s_state.spec.height, s_state.memory_dc, 0, 0, SRCCOPY);

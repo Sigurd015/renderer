@@ -8,7 +8,6 @@ typedef enum {
 	EVENT_TYPE_WINDOW_RESIZE,
 	EVENT_TYPE_KEY_PRESSED,
 	EVENT_TYPE_KEY_RELEASED,
-	EVENT_TYPE_KEY_TYPED,
 	EVENT_TYPE_MOUSE_BUTTON_PRESSED,
 	EVENT_TYPE_MOUSE_BUTTON_RELEASED,
 	EVENT_TYPE_MOUSE_MOVED,
@@ -36,6 +35,15 @@ typedef struct {
 	mouse_button button;
 	f32 padding;
 } mouse_button_released_event;
+typedef struct {
+	key_code key;
+	b8 repeat;
+	b8 padding[3];
+} key_pressed_event;
+typedef struct {
+	key_code key;
+	f32 padding;
+} key_released_event;
 
 typedef struct {
 	union
@@ -45,6 +53,8 @@ typedef struct {
 		mouse_scrolled_event mouse_scrolled;
 		mouse_button_pressed_event mouse_button_pressed;
 		mouse_button_released_event mouse_button_released;
+		key_pressed_event key_pressed;
+		key_released_event key_released;
 	};
 } event_context;
 

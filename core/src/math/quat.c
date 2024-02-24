@@ -72,6 +72,17 @@ mat4 quat_to_mat4(quat q)
 	return result;
 }
 
+vec3 quat_rotate_vec3(quat q, vec3 v)
+{
+	// https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion
+
+	vec3 result;
+	result.x = 2 * (q.x * v.z * q.z + q.y * v.z * q.w - q.x * v.y * q.w + q.y * v.y * q.z) + v.x * (q.x * q.x + q.y * q.y - q.z * q.z - q.w * q.w);
+	result.y = 2 * (q.x * v.x * q.w + q.y * v.x * q.z - q.x * v.z * q.y + q.z * v.z * q.w) + v.y * (q.x * q.x - q.y * q.y + q.z * q.z - q.w * q.w);
+	result.z = 2 * (q.x * v.y * q.y - q.x * v.x * q.z + q.y * v.x * q.w + q.z * v.y * q.w) + v.z * (q.x * q.x - q.y * q.y - q.z * q.z + q.w * q.w);
+	return result;
+}
+
 quat quat_axis_angle(vec3 axis, f32 angle)
 {
 	quat result;

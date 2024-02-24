@@ -4,6 +4,11 @@
 #include <math.h>
 
 // -- Vector 2 --
+vec2 vec2_create_from_scalar(f32 f)
+{
+	return vec2_create(f, f);
+}
+
 vec2 vec2_create(f32 x, f32 y)
 {
 	vec2 result;
@@ -28,6 +33,14 @@ vec2 vec2_sub(vec2 left, vec2 right)
 	return result;
 }
 
+vec2 vec2_sub_scalar(vec2 v, f32 f)
+{
+	vec2 result;
+	result.x = v.x - f;
+	result.y = v.y - f;
+	return result;
+}
+
 vec2 vec2_mul(vec2 left, vec2 right)
 {
 	vec2 result;
@@ -36,15 +49,15 @@ vec2 vec2_mul(vec2 left, vec2 right)
 	return result;
 }
 
-vec2 vec2_div(vec2 left, vec2 right)
+vec2 vec2_mul_scalar(vec2 v, f32 f)
 {
 	vec2 result;
-	result.x = left.x / right.x;
-	result.y = left.y / right.y;
+	result.x = v.x * f;
+	result.y = v.y * f;
 	return result;
 }
 
-vec2 vec2_divf(vec2 v, f32 f)
+vec2 vec2_div(vec2 v, f32 f)
 {
 	vec2 result;
 	result.x = v.x / f;
@@ -65,7 +78,7 @@ f32 vec2_len(vec2 v)
 vec2 vec2_normalize(vec2 v)
 {
 	f32 len = vec2_len(v);
-	return vec2_divf(v, len);
+	return vec2_div(v, len);
 }
 
 f32 vec2_distance_sq(vec2 left, vec2 right)
@@ -117,6 +130,15 @@ vec3 vec3_mul(vec3 left, vec3 right)
 	result.x = left.x * right.x;
 	result.y = left.y * right.y;
 	result.z = left.z * right.z;
+	return result;
+}
+
+vec3 vec3_mul_scalar(vec3 v, f32 f)
+{
+	vec3 result;
+	result.x = v.x * f;
+	result.y = v.y * f;
+	result.z = v.z * f;
 	return result;
 }
 
@@ -174,7 +196,27 @@ vec3 vec3_cross(vec3 left, vec3 right)
 	return result;
 }
 
+vec3 vec3_reflect(vec3 v, vec3 normal)
+{
+	f32 dot = vec3_dot(v, normal);
+	vec3 result;
+	result.x = v.x - 2.0f * dot * normal.x;
+	result.y = v.y - 2.0f * dot * normal.y;
+	result.z = v.z - 2.0f * dot * normal.z;
+	return result;
+}
+
 // -- Vector 4 --
+vec4 vec4_create_from_vec3(vec3 v, f32 w)
+{
+	vec4 result;
+	result.x = v.x;
+	result.y = v.y;
+	result.z = v.z;
+	result.w = w;
+	return result;
+}
+
 vec4 vec4_create(f32 x, f32 y, f32 z, f32 w)
 {
 	vec4 result;
@@ -212,6 +254,16 @@ vec4 vec4_mul(vec4 left, vec4 right)
 	result.y = left.y * right.y;
 	result.z = left.z * right.z;
 	result.w = left.w * right.w;
+	return result;
+}
+
+vec4 vec4_mul_m4(vec4 v, mat4 m)
+{
+	vec4 result;
+	result.x = v.x * m.m00 + v.y * m.m10 + v.z * m.m20 + v.w * m.m30;
+	result.y = v.x * m.m01 + v.y * m.m11 + v.z * m.m21 + v.w * m.m31;
+	result.z = v.x * m.m02 + v.y * m.m12 + v.z * m.m22 + v.w * m.m32;
+	result.w = v.x * m.m03 + v.y * m.m13 + v.z * m.m23 + v.w * m.m33;
 	return result;
 }
 
@@ -267,6 +319,16 @@ vec3 vec4_to_vec3(vec4 v)
 	result.x = v.x;
 	result.y = v.y;
 	result.z = v.z;
+	return result;
+}
+
+vec4 vec4_clamp(vec4 v, vec4 min, vec4 max)
+{
+	vec4 result;
+	result.x = fminf(fmaxf(v.x, min.x), max.x);
+	result.y = fminf(fmaxf(v.y, min.y), max.y);
+	result.z = fminf(fmaxf(v.z, min.z), max.z);
+	result.w = fminf(fmaxf(v.w, min.w), max.w);
 	return result;
 }
 

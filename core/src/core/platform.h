@@ -23,7 +23,17 @@ u32 platform_get_window_width();
 u32 platform_get_window_height();
 f64 platform_get_time();
 
-void platform_present_surface(image* surface);
+// Input
+void platform_input_update();
+b8 platform_is_key(key_code key);
+b8 platform_is_key_down(key_code key);
+b8 platform_is_mouse_button(mouse_button button);
+b8 platform_is_mouse_button_down(mouse_button button);
+vec2 platform_get_mouse_position();
+void platform_set_cursor(b8 visible);
+
+// Renderer
+void platform_present(image* buffer);
 
 // Memory
 void platform_zero_memory(void* mem, u64 size);

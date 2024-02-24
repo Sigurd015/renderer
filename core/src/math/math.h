@@ -6,70 +6,83 @@
 
 #define PI 3.14159265358979323846f
 #define PI_2 2.0f * PI
-#define RAD_TO_DEG 180.0f / PI
-#define DEG_TO_RAD PI / 180.0f
+#define RAD_TO_DEG(rad) (180.0f / PI) * rad
+#define DEG_TO_RAD(deg) (PI / 180.0f)* deg
+#define F32_MAX 3.402823466e+38f
 
-// -- Vector types --
-typedef union
-{
+// -- Vector --
+typedef union {
 	f32 elements[2];
-	struct
-	{
-		union
-		{
+	struct {
+		union {
 			f32 x, r, u;
 		};
-		union
-		{
+		union {
 			f32 y, g, v;
 		};
 	};
 } vec2;
 
-typedef union
-{
+typedef union {
 	f32 elements[3];
-	struct
-	{
-		union
-		{
+	struct {
+		union {
 			f32 x, r, u;
 		};
-		union
-		{
+		union {
 			f32 y, g, v;
 		};
-		union
-		{
+		union {
 			f32 z, b, w;
 		};
 	};
 } vec3;
 
-typedef union
-{
+typedef union {
 	f32 elements[4];
-	struct
-	{
-		union
-		{
+	struct {
+		union {
 			f32 x, r;
 		};
-		union
-		{
+		union {
 			f32 y, g;
 		};
-		union
-		{
+		union {
 			f32 z, b;
 		};
-		union
-		{
+		union {
 			f32 w, a;
 		};
 	};
 } vec4;
+typedef vec4 quat;
 
+// -- Ray --
+typedef struct {
+	vec3 origin, direction;
+} ray;
+
+// -- Matrix --
+typedef union {
+	f32 elements[3 * 3];
+	struct {
+		f32 m00, m01, m02;
+		f32 m10, m11, m12;
+		f32 m20, m21, m22;
+	};
+} mat3;
+
+typedef union {
+	f32 elements[4 * 4];
+	struct {
+		f32 m00, m01, m02, m03;
+		f32 m10, m11, m12, m13;
+		f32 m20, m21, m22, m23;
+		f32 m30, m31, m32, m33;
+	};
+} mat4;
+
+// -- Vector types --
 #define vec2_zero (vec2) { 0.0f, 0.0f }
 #define vec3_zero (vec3) { 0.0f, 0.0f, 0.0f }
 #define vec4_zero (vec4) { 0.0f, 0.0f, 0.0f, 0.0f }
@@ -94,12 +107,14 @@ typedef union
 #define vec3_right (vec3) { 1.0f, 0.0f, 0.0f }
 #define vec4_right (vec4) { 1.0f, 0.0f, 0.0f, 0.0f }
 
+vec2 vec2_create_from_scalar(f32 f);
 vec2 vec2_create(f32 x, f32 y);
 vec2 vec2_add(vec2 left, vec2 right);
 vec2 vec2_sub(vec2 left, vec2 right);
+vec2 vec2_sub_scalar(vec2 v, f32 f);
 vec2 vec2_mul(vec2 left, vec2 right);
-vec2 vec2_div(vec2 left, vec2 right);
-vec2 vec2_divf(vec2 v, f32 f);
+vec2 vec2_mul_scalar(vec2 v, f32 f);
+vec2 vec2_div(vec2 v, f32 f);
 f32 vec2_len_sq(vec2 v);
 f32 vec2_len(vec2 v);
 vec2 vec2_normalize(vec2 v);
@@ -111,6 +126,7 @@ vec3 vec3_create(f32 x, f32 y, f32 z);
 vec3 vec3_add(vec3 left, vec3 right);
 vec3 vec3_sub(vec3 left, vec3 right);
 vec3 vec3_mul(vec3 left, vec3 right);
+vec3 vec3_mul_scalar(vec3 v, f32 f);
 vec3 vec3_div(vec3 v, f32 f);
 f32 vec3_len_sq(vec3 v);
 f32 vec3_len(vec3 v);
@@ -120,11 +136,14 @@ f32 vec3_distance(vec3 left, vec3 right);
 b32 vec3_equal(vec3 left, vec3 right);
 f32 vec3_dot(vec3 left, vec3 right);
 vec3 vec3_cross(vec3 left, vec3 right);
+vec3 vec3_reflect(vec3 v, vec3 normal);
 
+vec4 vec4_create_from_vec3(vec3 v, f32 w);
 vec4 vec4_create(f32 x, f32 y, f32 z, f32 w);
 vec4 vec4_add(vec4 left, vec4 right);
 vec4 vec4_sub(vec4 left, vec4 right);
 vec4 vec4_mul(vec4 left, vec4 right);
+vec4 vec4_mul_m4(vec4 v, mat4 m);
 vec4 vec4_div(vec4 v, f32 f);
 f32 vec4_len_sq(vec4 v);
 f32 vec4_len(vec4 v);
@@ -134,6 +153,7 @@ f32 vec4_distance(vec4 left, vec4 right);
 b32 vec4_equal(vec4 left, vec4 right);
 f32 vec4_dot(vec4 left, vec4 right);
 vec3 vec4_to_vec3(vec4 v);
+vec4 vec4_clamp(vec4 v, vec4 min, vec4 max);
 
 typedef enum {
 	U32_COLOR_TYPE_RGBA,
@@ -143,29 +163,6 @@ typedef enum {
 u32 vec4_to_u32(vec4 color, u32_color_type type);
 
 // -- Matrix types --
-typedef union
-{
-	f32 elements[3 * 3];
-	struct
-	{
-		f32 m00, m01, m02;
-		f32 m10, m11, m12;
-		f32 m20, m21, m22;
-	};
-} mat3;
-
-typedef union
-{
-	f32 elements[4 * 4];
-	struct
-	{
-		f32 m00, m01, m02, m03;
-		f32 m10, m11, m12, m13;
-		f32 m20, m21, m22, m23;
-		f32 m30, m31, m32, m33;
-	};
-} mat4;
-
 #define mat3_identity (mat3) { 1.0f, 0.0f, 0.0f, \
 							   0.0f, 1.0f, 0.0f, \
 							   0.0f, 0.0f, 1.0f }
@@ -189,7 +186,6 @@ mat4 mat4_euler_z(f32 angle);
 mat4 mat4_euler_xyz(f32 x, f32 y, f32 z);
 
 // -- Quaternion type --
-typedef vec4 quat;
 #define quat_identity (quat) { 0.0f, 0.0f, 0.0f, 1.0f }
 
 f32 quat_normal(quat q);
@@ -200,3 +196,4 @@ quat quat_mul(quat left, quat right);
 f32 quat_dot(quat left, quat right);
 quat quat_axis_angle(vec3 axis, f32 angle);
 mat4 quat_to_mat4(quat q);
+vec3 quat_rotate_vec3(quat q, vec3 v);
