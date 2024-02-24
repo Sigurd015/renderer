@@ -22,6 +22,7 @@ void* platform_get_window_handle();
 u32 platform_get_window_width();
 u32 platform_get_window_height();
 f64 platform_get_time();
+f64 platform_get_absolute_time();
 
 // Input
 void platform_input_update();

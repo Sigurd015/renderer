@@ -31,7 +31,7 @@ void darray_clear(darray* dary)
 	dary->length = 0;
 }
 
-// Notice dont forget the return value, when resize is called, the pointer to the array is changed
+// Notice dont forget the return value, when array is resized, the pointer to the array is changed
 darray* darray_push(darray* dary, const void* data)
 {
 	u64 length = dary->length;

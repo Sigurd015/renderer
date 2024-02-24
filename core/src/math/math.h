@@ -7,8 +7,20 @@
 #define PI 3.14159265358979323846f
 #define PI_2 2.0f * PI
 #define RAD_TO_DEG(rad) (180.0f / PI) * rad
-#define DEG_TO_RAD(deg) (PI / 180.0f)* deg
+#define DEG_TO_RAD(deg) (PI / 180.0f) * deg
 #define F32_MAX 3.402823466e+38f
+
+// -- Scalar types --
+i32 i32_random();
+i32 i32_random_range(i32 min, i32 max);
+
+f32 f32_sqrt(f32 f);
+f32 f32_clamp(f32 f, f32 min, f32 max);
+f32 f32_sin(f32 f);
+f32 f32_cos(f32 f);
+f32 f32_tan(f32 f);
+f32 f32_random();
+f32 f32_random_range(f32 min, f32 max);
 
 // -- Vector --
 typedef union {
@@ -137,6 +149,8 @@ b32 vec3_equal(vec3 left, vec3 right);
 f32 vec3_dot(vec3 left, vec3 right);
 vec3 vec3_cross(vec3 left, vec3 right);
 vec3 vec3_reflect(vec3 v, vec3 normal);
+vec3 vec3_random();
+vec3 vec3_random_range(f32 min, f32 max);
 
 vec4 vec4_create_from_vec3(vec3 v, f32 w);
 vec4 vec4_create(f32 x, f32 y, f32 z, f32 w);
@@ -154,13 +168,9 @@ b32 vec4_equal(vec4 left, vec4 right);
 f32 vec4_dot(vec4 left, vec4 right);
 vec3 vec4_to_vec3(vec4 v);
 vec4 vec4_clamp(vec4 v, vec4 min, vec4 max);
-
-typedef enum {
-	U32_COLOR_TYPE_RGBA,
-	U32_COLOR_TYPE_ARGB,
-	U32_COLOR_TYPE_ABGR
-} u32_color_type;
-u32 vec4_to_u32(vec4 color, u32_color_type type);
+u32 vec4_to_rgba_u32(vec4 color);
+u32 vec4_to_argb_u32(vec4 color);
+u32 vec4_to_abgr_u32(vec4 color);
 
 // -- Matrix types --
 #define mat3_identity (mat3) { 1.0f, 0.0f, 0.0f, \

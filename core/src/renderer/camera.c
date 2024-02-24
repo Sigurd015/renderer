@@ -56,7 +56,7 @@ b8 camera_update(camera* cam, f32 delta_time)
 	vec2 delta = vec2_mul_scalar(vec2_sub(mousePos, cam->last_mouse_position), 0.002f);
 	cam->last_mouse_position = mousePos;
 
-	if (!input_is_mouse_button_down(MOUSE_BUTTON_RIGHT))
+	if (!input_is_mouse_button(MOUSE_BUTTON_RIGHT))
 	{
 		input_set_cursor(TRUE);
 		return FALSE;
@@ -71,34 +71,34 @@ b8 camera_update(camera* cam, f32 delta_time)
 	f32 speed = 5.0f;
 
 	// Movement
-	if (input_is_key_down(KEY_W))
+	if (input_is_key(KEY_W))
 	{
 		cam->position = vec3_add(cam->position, vec3_mul_scalar(cam->forward_direction, speed * delta_time));
 		moved = TRUE;
 	}
-	else if (input_is_key_down(KEY_S))
+	else if (input_is_key(KEY_S))
 	{
 		cam->position = vec3_sub(cam->position, vec3_mul_scalar(cam->forward_direction, speed * delta_time));
 		moved = TRUE;
 	}
 
-	if (input_is_key_down(KEY_A))
+	if (input_is_key(KEY_A))
 	{
 		cam->position = vec3_sub(cam->position, vec3_mul_scalar(rightDirection, speed * delta_time));
 		moved = TRUE;
 	}
-	else if (input_is_key_down(KEY_D))
+	else if (input_is_key(KEY_D))
 	{
 		cam->position = vec3_add(cam->position, vec3_mul_scalar(rightDirection, speed * delta_time));
 		moved = TRUE;
 	}
 
-	if (input_is_key_down(KEY_Q))
+	if (input_is_key(KEY_Q))
 	{
 		cam->position = vec3_sub(cam->position, vec3_mul_scalar(vec3_up, speed * delta_time));
 		moved = TRUE;
 	}
-	else if (input_is_key_down(KEY_E))
+	else if (input_is_key(KEY_E))
 	{
 		cam->position = vec3_add(cam->position, vec3_mul_scalar(vec3_up, speed * delta_time));
 		moved = TRUE;

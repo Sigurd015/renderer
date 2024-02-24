@@ -48,7 +48,7 @@ mat4 mat4_perspective(f32 fov, f32 aspect_ratio, f32 near, f32 far)
 {
 	mat4 result = mat4_identity;
 
-	f32 tan_half_fov = tanf(fov * 0.5);
+	f32 tan_half_fov = f32_tan(fov * 0.5);
 
 	result.elements[0] = 1.0f / (aspect_ratio * tan_half_fov);
 	result.elements[5] = 1.0f / tan_half_fov;
@@ -214,8 +214,8 @@ mat4 mat4_euler_x(f32 angle)
 {
 	mat4 result = mat4_identity;
 
-	f32 c = cosf(angle);
-	f32 s = sinf(angle);
+	f32 c = f32_cos(angle);
+	f32 s = f32_sin(angle);
 
 	result.elements[5] = c;
 	result.elements[6] = s;
@@ -229,8 +229,8 @@ mat4 mat4_euler_y(f32 angle)
 {
 	mat4 result = mat4_identity;
 
-	f32 c = cosf(angle);
-	f32 s = sinf(angle);
+	f32 c = f32_cos(angle);
+	f32 s = f32_sin(angle);
 
 	result.elements[0] = c;
 	result.elements[2] = -s;
@@ -244,8 +244,8 @@ mat4 mat4_euler_z(f32 angle)
 {
 	mat4 result = mat4_identity;
 
-	f32 c = cosf(angle);
-	f32 s = sinf(angle);
+	f32 c = f32_cos(angle);
+	f32 s = f32_sin(angle);
 
 	result.elements[0] = c;
 	result.elements[1] = s;

@@ -5,7 +5,7 @@
 
 f32 quat_normal(quat q)
 {
-	return sqrtf(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+	return f32_sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
 }
 
 quat quat_normalize(quat q)
@@ -37,16 +37,31 @@ quat quat_inverse(quat q)
 quat quat_mul(quat left, quat right)
 {
 	quat result;
-	result.x = left.w * right.x + left.x * right.w + left.y * right.z - left.z * right.y;
-	result.y = left.w * right.y + left.y * right.w + left.z * right.x - left.x * right.z;
-	result.z = left.w * right.z + left.z * right.w + left.x * right.y - left.y * right.x;
-	result.w = left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z;
+	result.x = left.x * right.w + left.y * right.z - left.z * right.y + left.w * right.x;
+	result.y = -left.x * right.z + left.y * right.w + left.z * right.x + left.w * right.y;
+	result.z = left.x * right.y - left.y * right.x + left.z * right.w + left.w * right.z;
+	result.w = -left.x * right.x - left.y * right.y - left.z * right.z + left.w * right.w;
 	return result;
 }
 
 f32 quat_dot(quat left, quat right)
 {
 	return left.x * right.x + left.y * right.y + left.z * right.z + left.w * right.w;
+}
+
+quat quat_axis_angle(vec3 axis, f32 angle)
+{
+	quat result;
+
+	f32 half_angle = angle * 0.5f;
+	f32 s = f32_sin(half_angle);
+
+	result.x = axis.x * s;
+	result.y = axis.y * s;
+	result.z = axis.z * s;
+	result.w = f32_cos(half_angle);
+
+	return result;
 }
 
 mat4 quat_to_mat4(quat q)
@@ -74,26 +89,12 @@ mat4 quat_to_mat4(quat q)
 
 vec3 quat_rotate_vec3(quat q, vec3 v)
 {
-	// https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion
+	vec3 u = vec3_create(q.x, q.y, q.z);
+	f32 s = q.w;
 
-	vec3 result;
-	result.x = 2 * (q.x * v.z * q.z + q.y * v.z * q.w - q.x * v.y * q.w + q.y * v.y * q.z) + v.x * (q.x * q.x + q.y * q.y - q.z * q.z - q.w * q.w);
-	result.y = 2 * (q.x * v.x * q.w + q.y * v.x * q.z - q.x * v.z * q.y + q.z * v.z * q.w) + v.y * (q.x * q.x - q.y * q.y + q.z * q.z - q.w * q.w);
-	result.z = 2 * (q.x * v.y * q.y - q.x * v.x * q.z + q.y * v.x * q.w + q.z * v.y * q.w) + v.z * (q.x * q.x - q.y * q.y - q.z * q.z + q.w * q.w);
-	return result;
-}
-
-quat quat_axis_angle(vec3 axis, f32 angle)
-{
-	quat result;
-
-	f32 half_angle = angle * 0.5f;
-	f32 s = sinf(half_angle);
-
-	result.x = axis.x * s;
-	result.y = axis.y * s;
-	result.z = axis.z * s;
-	result.w = cosf(half_angle);
-
-	return result;
+	return vec3_add(
+		vec3_add(
+			vec3_mul_scalar(u, 2.0f * vec3_dot(u, v)),
+			vec3_mul_scalar(v, (s * s - vec3_dot(u, u)))),
+		vec3_mul_scalar(vec3_cross(u, v), 2.0f * s));
 }

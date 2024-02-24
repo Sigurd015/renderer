@@ -11,7 +11,7 @@ typedef struct {
 } internal_state;
 static internal_state s_state;
 
-void renderer_init(u32 width, u32 height, u32_color_type format)
+void renderer_init(u32 width, u32 height, image_format format)
 {
 	s_state.buffer = image_create(width, height, format);
 	image_fill(s_state.buffer, vec4_create(0.0f, 0.0f, 0.0f, 1.0f));
@@ -72,16 +72,8 @@ hit_payload closes_hit(scene* scene, ray* ray, f32 hit_distance, i32 object_inde
 	return payload;
 }
 
-#include <math.h>
-f32 f32_sqrt(f32 f)
-{
-	return sqrtf(f);
-}
-
 hit_payload trace_ray(scene* scene, ray* ray)
 {
-	// rayDirection = glm::normalize(rayDirection);
-
 	// (bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 + ay^2 - r^2) = 0
 	// where
 	// a = ray origin
@@ -99,7 +91,7 @@ hit_payload trace_ray(scene* scene, ray* ray)
 		vec3 origin = vec3_sub(ray->origin, sphere->position);
 
 		f32 a = vec3_dot(ray->direction, ray->direction);
-		f32 b = 2.0f * vec3_dot(ray->direction, origin);
+		f32 b = 2.0f * vec3_dot(origin, ray->direction);
 		f32 c = vec3_dot(origin, origin) - sphere->radius * sphere->radius;
 
 		// Quadratic forumula discriminant:
@@ -112,8 +104,8 @@ hit_payload trace_ray(scene* scene, ray* ray)
 		// Quadratic formula:
 		// (-b +- sqrt(discriminant)) / 2a
 
-		// float t0 = (-b + glm::sqrt(discriminant)) / (2.0f * a); // Second hit distance (currently unused)
-		float closest_t = (-b - sqrtf(discriminant)) / (2.0f * a);
+		//float t0 = (-b + f32_sqrt(discriminant)) / (2.0f * a); // Second hit distance (currently unused)
+		float closest_t = (-b - f32_sqrt(discriminant)) / (2.0f * a);
 		if (closest_t > 0.0f && closest_t < hit_distance)
 		{
 			hit_distance = closest_t;
@@ -130,7 +122,7 @@ hit_payload trace_ray(scene* scene, ray* ray)
 vec4 per_pixel(scene* scene, camera* cam, u32 x, u32 y)
 {
 	ray ray;
-	ray.origin = cam->position;
+	ray.origin = camera_get_position(cam);
 	ray.direction = *(vec3*)darray_get(cam->ray_directions, x + y * s_state.buffer->width);
 
 	vec3 light = vec3_zero;
@@ -143,7 +135,7 @@ vec4 per_pixel(scene* scene, camera* cam, u32 x, u32 y)
 		if (payload.hit_distance < 0.0f)
 		{
 			vec3 sky_color = vec3_create(0.6f, 0.7f, 0.9f);
-			//light = vec3_add(light, vec3_mul(contribution, sky_color));
+			light = vec3_add(light, vec3_mul(contribution, sky_color));
 			break;
 		}
 
@@ -154,8 +146,8 @@ vec4 per_pixel(scene* scene, camera* cam, u32 x, u32 y)
 		light = vec3_add(light, vec3_mul_scalar(mat->emission_color, mat->emission_power));
 
 		ray.origin = vec3_add(payload.world_position, vec3_mul_scalar(payload.world_normal, 0.0001f));
-		//ray.direction = vec3_reflect(ray.direction, vec3_add(payload.world_normal, vec3_mul_scalar(vec3_create(0.3f, 0.4f, -0.1f), mat->roughness)));
-		ray.direction = vec3_normalize(vec3_add(payload.world_normal, vec3_create(0.1f, -0.4f, 0.6f)));
+		//ray.direction = vec3_reflect(ray.direction, vec3_add(payload.world_normal, vec3_mul_scalar(vec3_random(-0.5f, 0.5f), mat->roughness)));
+		ray.direction = vec3_normalize(vec3_add(payload.world_normal, vec3_normalize(vec3_random(-1.0f, 1.0f))));
 	}
 
 	return vec4_create_from_vec3(light, 1.0f);
@@ -182,6 +174,10 @@ void renderer_draw(scene* scene, camera* cam)
 			image_set_pixel(s_state.buffer, x + y * s_state.buffer->width, accumulated_color);
 		}
 	}
+
+	image_flip_vertically(s_state.buffer);
+
+	s_state.frame_count++;
 }
 
 void renderer_reset_frame_count()

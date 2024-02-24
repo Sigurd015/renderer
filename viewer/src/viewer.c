@@ -2,6 +2,9 @@
 #include "entry.h"
 
 // TODO: temporary
+#define WINDOW_WIDTH 1280	
+#define WINDOW_HEIGHT 720
+
 static scene s_scene;
 static camera s_camera;
 
@@ -107,47 +110,44 @@ void viewer_init()
 	}
 }
 
-void viewer_update(float delta_time)
+void viewer_update(f32 delta_time)
 {
 	//APP_LOG_INFO("Viewer update - %f", delta_time);
 
-	//vec4 color = vec4_zero;
-	vec4 color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
+#if 0
+	vec4 color = vec4_zero;
 
-	if (input_is_key_down(KEY_Q))
+	if (input_is_key(KEY_Q))
 	{
 		color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
 	}
-	else if (input_is_key_down(KEY_W))
+	else if (input_is_key(KEY_W))
 	{
 		color = vec4_create(0.0f, 1.0f, 0.0f, 1.0f);
 	}
-	else if (input_is_key_down(KEY_E))
+	else if (input_is_key(KEY_E))
 	{
 		color = vec4_create(0.0f, 0.0f, 1.0f, 1.0f);
 	}
-	else if (input_is_key_down(KEY_R))
+	else if (input_is_key(KEY_R))
 	{
 		color = vec4_create(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	renderer_clear(color);
+#else
+	if (camera_update(&s_camera, delta_time))
+	{
+		renderer_reset_frame_count();
+	}
 
+	camera_resize(&s_camera, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-
-	//if (camera_update(&s_camera, delta_time))
-	//{
-	//	renderer_reset_frame_count();
-	//}
-
-	//camera_resize(&s_camera, 1920, 1080);
-
-	//renderer_draw(&s_scene, &s_camera);
+	renderer_draw(&s_scene, &s_camera);
+#endif
 }
 
 void viewer_shutdown()
 {
-	APP_LOG_INFO("Viewer shutdown");
-
 	camera_release(&s_camera);
 	darray_destroy(s_scene.materials);
 	darray_destroy(s_scene.spheres);
@@ -201,8 +201,8 @@ void viewer_on_event(event e)
 void application_create(application* app)
 {
 	app->application_spec.platform_spec.name = "Viewer";
-	app->application_spec.platform_spec.width = 1920;
-	app->application_spec.platform_spec.height = 1080;
+	app->application_spec.platform_spec.width = WINDOW_WIDTH;
+	app->application_spec.platform_spec.height = WINDOW_HEIGHT;
 	app->application_spec.platform_spec.resizable = FALSE;
 	app->application_spec.platform_spec.maximizable = FALSE;
 	app->application_spec.platform_spec.minimizable = TRUE;

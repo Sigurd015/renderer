@@ -72,7 +72,7 @@ f32 vec2_len_sq(vec2 v)
 
 f32 vec2_len(vec2 v)
 {
-	return sqrtf(vec2_len_sq(v));
+	return f32_sqrt(vec2_len_sq(v));
 }
 
 vec2 vec2_normalize(vec2 v)
@@ -158,7 +158,7 @@ f32 vec3_len_sq(vec3 v)
 
 f32 vec3_len(vec3 v)
 {
-	return sqrtf(vec3_len_sq(v));
+	return f32_sqrt(vec3_len_sq(v));
 }
 
 vec3 vec3_normalize(vec3 v)
@@ -203,6 +203,24 @@ vec3 vec3_reflect(vec3 v, vec3 normal)
 	result.x = v.x - 2.0f * dot * normal.x;
 	result.y = v.y - 2.0f * dot * normal.y;
 	result.z = v.z - 2.0f * dot * normal.z;
+	return result;
+}
+
+vec3 vec3_random()
+{
+	vec3 result;
+	result.x = f32_random();
+	result.y = f32_random();
+	result.z = f32_random();
+	return result;
+}
+
+vec3 vec3_random_range(f32 min, f32 max)
+{
+	vec3 result;
+	result.x = f32_random_range(min, max);
+	result.y = f32_random_range(min, max);
+	result.z = f32_random_range(min, max);
 	return result;
 }
 
@@ -284,7 +302,7 @@ f32 vec4_len_sq(vec4 v)
 
 f32 vec4_len(vec4 v)
 {
-	return sqrtf(vec4_len_sq(v));
+	return f32_sqrt(vec4_len_sq(v));
 }
 
 vec4 vec4_normalize(vec4 v)
@@ -325,27 +343,36 @@ vec3 vec4_to_vec3(vec4 v)
 vec4 vec4_clamp(vec4 v, vec4 min, vec4 max)
 {
 	vec4 result;
-	result.x = fminf(fmaxf(v.x, min.x), max.x);
-	result.y = fminf(fmaxf(v.y, min.y), max.y);
-	result.z = fminf(fmaxf(v.z, min.z), max.z);
-	result.w = fminf(fmaxf(v.w, min.w), max.w);
+	result.x = f32_clamp(v.x, min.x, max.x);
+	result.y = f32_clamp(v.y, min.y, max.y);
+	result.z = f32_clamp(v.z, min.z, max.z);
+	result.w = f32_clamp(v.w, min.w, max.w);
 	return result;
 }
 
-u32 vec4_to_u32(vec4 color, u32_color_type type)
+u32 vec4_to_rgba_u32(vec4 color)
 {
 	u8 r = (u8)(color.r * 255.0f);
 	u8 g = (u8)(color.g * 255.0f);
 	u8 b = (u8)(color.b * 255.0f);
 	u8 a = (u8)(color.a * 255.0f);
+	return (r << 24) | (g << 16) | (b << 8) | a;
+}
 
-	switch (type)
-	{
-	case U32_COLOR_TYPE_ARGB:
-		return (a << 24) | (r << 16) | (g << 8) | b;
-	case U32_COLOR_TYPE_RGBA:
-		return (r << 24) | (g << 16) | (b << 8) | a;
-	case U32_COLOR_TYPE_ABGR:
-		return (a << 24) | (b << 16) | (g << 8) | r;
-	}
+u32 vec4_to_argb_u32(vec4 color)
+{
+	u8 r = (u8)(color.r * 255.0f);
+	u8 g = (u8)(color.g * 255.0f);
+	u8 b = (u8)(color.b * 255.0f);
+	u8 a = (u8)(color.a * 255.0f);
+	return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+u32 vec4_to_abgr_u32(vec4 color)
+{
+	u8 r = (u8)(color.r * 255.0f);
+	u8 g = (u8)(color.g * 255.0f);
+	u8 b = (u8)(color.b * 255.0f);
+	u8 a = (u8)(color.a * 255.0f);
+	return (a << 24) | (b << 16) | (g << 8) | r;
 }

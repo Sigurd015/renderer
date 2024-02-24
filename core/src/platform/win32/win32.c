@@ -233,7 +233,7 @@ void platform_init(platform_specification* spec)
 	// Initialize Renderer and Show Window
 	{
 		// Notice format is ARGB
-		renderer_init(s_state.spec.width, s_state.spec.height, U32_COLOR_TYPE_ARGB);
+		renderer_init(s_state.spec.width, s_state.spec.height, IMAGE_FORMAT_ARGB);
 
 		ShowWindow(s_state.window_handle, SW_SHOW);
 	}
@@ -294,13 +294,20 @@ f64 platform_get_time()
 	return (f64)(now_time.QuadPart - s_state.clock_start.QuadPart) * s_state.clock_frequency;
 }
 
+f64 platform_get_absolute_time()
+{
+	LARGE_INTEGER now_time;
+	QueryPerformanceCounter(&now_time);
+	return (f64)now_time.QuadPart * s_state.clock_frequency;
+}
+
 // Input
 void platform_input_update()
 {
 	for (u32 KeyCode = 0; KeyCode < 256; KeyCode++)
 	{
 		s_state.previous_key_state[KeyCode] = s_state.current_key_state[KeyCode];
-		s_state.current_key_state[KeyCode] = GetAsyncKeyState(KeyCode) & 0x8000;
+		s_state.current_key_state[KeyCode] = (GetAsyncKeyState(KeyCode) & 0x8000) != 0;
 	}
 }
 
@@ -342,7 +349,7 @@ void platform_present(image* buffer)
 {
 	CORE_ASSERT(s_state.spec.width == image_get_width(buffer) &&
 		s_state.spec.height == image_get_height(buffer) &&
-		image_get_format(buffer) == U32_COLOR_TYPE_ARGB,
+		image_get_format(buffer) == IMAGE_FORMAT_ARGB,
 		"platform_present - Invalid buffer");
 
 	image_copy_to_data(buffer, s_state.back_buffer);

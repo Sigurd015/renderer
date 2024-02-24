@@ -18,7 +18,7 @@ typedef struct {
 
 	void(*init)();
 	void(*shutdown)();
-	void(*update)(float delta_time);
+	void(*update)(f32 delta_time);
 	void(*on_event)(event e);
 } application;
 
