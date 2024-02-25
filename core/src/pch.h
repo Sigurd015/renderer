@@ -5,3 +5,4 @@
 #include "core/asserts.h"
 #include "math/math.h"
 #include "containers/darray.h"
+#include "core/string.h"

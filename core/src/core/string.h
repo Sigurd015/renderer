@@ -1,3 +1,3 @@
 #pragma once
 
-char* string_duplicate(const char *str);
+void string_format(char* buffer, u64 buffer_size, const char* format, ...);

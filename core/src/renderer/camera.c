@@ -48,6 +48,10 @@ void camera_create(camera* cam, f32 fov, f32 near_plane, f32 far_plane, u32 view
 	cam->inverse_view = mat4_identity;
 	cam->inverse_projection = mat4_identity;
 	cam->ray_directions = darray_create(ray);
+
+	recalculate_view(cam);
+	recalculate_projection(cam);
+	recalculate_ray_directions(cam);
 }
 
 b8 camera_update(camera* cam, f32 delta_time)
@@ -110,7 +114,7 @@ b8 camera_update(camera* cam, f32 delta_time)
 		float pitchDelta = delta.y * 0.3f;
 		float yawDelta = delta.x * 0.3f;
 
-		quat q = quat_normalize(quat_mul(quat_axis_angle(rightDirection, -pitchDelta), quat_axis_angle(vec3_up, -yawDelta)));
+		quat q = quat_mul(quat_axis_angle(rightDirection, -pitchDelta), quat_axis_angle(vec3_up, -yawDelta));
 		cam->forward_direction = quat_rotate_vec3(q, cam->forward_direction);
 		moved = TRUE;
 	}
@@ -125,6 +129,9 @@ b8 camera_update(camera* cam, f32 delta_time)
 
 void camera_resize(camera* cam, u32 width, u32 height)
 {
+	if (cam->viewport_width == width && cam->viewport_height == height)
+		return;
+
 	cam->viewport_width = width;
 	cam->viewport_height = height;
 

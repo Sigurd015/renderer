@@ -287,6 +287,13 @@ u32 platform_get_window_height()
 	return s_state.spec.height;
 }
 
+void platform_set_window_title(const char* title)
+{
+	char temp[256];
+	string_format(temp, 256, "%s - %s", s_state.spec.name, title);
+	SetWindowTextA(s_state.window_handle, temp);
+}
+
 f64 platform_get_time()
 {
 	LARGE_INTEGER now_time;

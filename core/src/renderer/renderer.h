@@ -9,5 +9,5 @@ void renderer_clear(vec4 color);
 void renderer_shutdown();
 
 // TODO: temporary
-void renderer_draw(scene* scene, camera* cam);
+void renderer_rt_draw(scene* scene, camera* cam);
 void renderer_reset_frame_count();

@@ -2,16 +2,13 @@
 #include "string.h"
 
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 
-u64 string_length(const char* str)
+void string_format(char* buffer, u64 buffer_size, const char* format, ...)
 {
-	return strlen(str);
-}
-
-char* string_duplicate(const char* str)
-{
-	u64 len = string_length(str);
-	char* str2 = memory_allocate(len + 1, MEMORY_TAG_STRING);
-	memory_copy(str2, str, len + 1);
-	return str2;
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buffer, buffer_size, format, args);
+	va_end(args);
 }

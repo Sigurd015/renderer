@@ -49,7 +49,7 @@ void viewer_init()
 	darray_destroy(dary);
 
 	// TODO: temporary
-	camera_create(&s_camera, DEG_TO_RAD(45.0f), 0.1f, 100.0f, 1920, 1080);
+	camera_create(&s_camera, DEG_TO_RAD(45.0f), 0.1f, 100.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 	s_scene.materials = darray_create(material);
 	s_scene.spheres = darray_create(sphere);
 
@@ -140,9 +140,8 @@ void viewer_update(f32 delta_time)
 		renderer_reset_frame_count();
 	}
 
-	camera_resize(&s_camera, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	renderer_draw(&s_scene, &s_camera);
+	renderer_rt_draw(&s_scene, &s_camera);
 #endif
 }
 
@@ -151,6 +150,15 @@ void viewer_shutdown()
 	camera_release(&s_camera);
 	darray_destroy(s_scene.materials);
 	darray_destroy(s_scene.spheres);
+}
+
+b8 viewer_on_wnd_resize(event e)
+{
+	APP_LOG_INFO("Window resize - %d, %d", e.context.wnd_resize.width, e.context.wnd_resize.height);
+
+	camera_resize(&s_camera, e.context.wnd_resize.width, e.context.wnd_resize.height);
+
+	return FALSE;
 }
 
 b8 on_mouse_move(event e)
@@ -162,34 +170,36 @@ b8 on_mouse_move(event e)
 
 b8 on_mouse_pressed(event e)
 {
-	APP_LOG_INFO("Mouse pressed - %d", e.context.mouse_button_pressed.button);
+	//APP_LOG_INFO("Mouse pressed - %d", e.context.mouse_button_pressed.button);
 
 	return FALSE;
 }
 
 b8 on_mouse_released(event e)
 {
-	APP_LOG_INFO("Mouse released - %d", e.context.mouse_button_released.button);
+	//APP_LOG_INFO("Mouse released - %d", e.context.mouse_button_released.button);
 
 	return FALSE;
 }
 
 b8 on_key_pressed(event e)
 {
-	APP_LOG_INFO("Key pressed - %d, %d", e.context.key_pressed.key, e.context.key_pressed.repeat);
+	//APP_LOG_INFO("Key pressed - %d, %d", e.context.key_pressed.key, e.context.key_pressed.repeat);
 
 	return FALSE;
 }
 
 b8 on_key_released(event e)
 {
-	APP_LOG_INFO("Key released - %d", e.context.key_released.key);
+	//APP_LOG_INFO("Key released - %d", e.context.key_released.key);
 
 	return FALSE;
 }
 
 void viewer_on_event(event e)
 {
+	event_dispatcher(EVENT_TYPE_WINDOW_RESIZE, &e, viewer_on_wnd_resize);
+
 	event_dispatcher(EVENT_TYPE_MOUSE_MOVED, &e, on_mouse_move);
 	event_dispatcher(EVENT_TYPE_MOUSE_BUTTON_PRESSED, &e, on_mouse_pressed);
 	event_dispatcher(EVENT_TYPE_MOUSE_BUTTON_RELEASED, &e, on_mouse_released);

@@ -21,6 +21,7 @@ void platform_shutdown();
 void* platform_get_window_handle();
 u32 platform_get_window_width();
 u32 platform_get_window_height();
+void platform_set_window_title(const char* title);
 f64 platform_get_time();
 f64 platform_get_absolute_time();
 

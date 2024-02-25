@@ -23,6 +23,7 @@ void renderer_init(u32 width, u32 height, image_format format)
 
 void renderer_swap_buffers()
 {
+	image_flip_vertically(s_state.buffer);
 	platform_present(s_state.buffer);
 }
 
@@ -153,7 +154,7 @@ vec4 per_pixel(scene* scene, camera* cam, u32 x, u32 y)
 	return vec4_create_from_vec3(light, 1.0f);
 }
 
-void renderer_draw(scene* scene, camera* cam)
+void renderer_rt_draw(scene* scene, camera* cam)
 {
 	if (s_state.frame_count == 1)
 	{
@@ -174,8 +175,6 @@ void renderer_draw(scene* scene, camera* cam)
 			image_set_pixel(s_state.buffer, x + y * s_state.buffer->width, accumulated_color);
 		}
 	}
-
-	image_flip_vertically(s_state.buffer);
 
 	s_state.frame_count++;
 }

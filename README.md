@@ -2,7 +2,7 @@
 A tiny soft-renderer
 
 # preview
-| Scene                    | preview                                                                       |
+| scene                    | preview                                                                       |
 | ------------------------ | ----------------------------------------------------------------------------- |
 | simple ray tracing (wip) | <img src="images/ray_tracing.png" width="600">                                |
 
