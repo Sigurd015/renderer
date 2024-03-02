@@ -26,6 +26,23 @@ i32 i32_random_range(i32 min, i32 max)
 	return rand() % (max - min + 1) + min;
 }
 
+i32 i32_abs(i32 i)
+{
+	return i < 0 ? -i : i;
+}
+
+void i32_swap(i32* a, i32* b)
+{
+	i32 temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+f32 f32_abs(f32 f)
+{
+	return f < 0 ? -f : f;
+}
+
 f32 f32_sqrt(f32 f)
 {
 	return sqrtf(f);

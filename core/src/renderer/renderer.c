@@ -4,8 +4,9 @@
 
 typedef struct {
 	image* buffer;
+	vec4 clear_color;
 
-	// TODO: temporary
+	// For ray tracing
 	u32 frame_count;
 	vec4* accumulation_buffer;
 } internal_state;
@@ -14,9 +15,9 @@ static internal_state s_state;
 void renderer_init(u32 width, u32 height, image_format format)
 {
 	s_state.buffer = image_create(width, height, format);
-	image_fill(s_state.buffer, vec4_create(0.0f, 0.0f, 0.0f, 1.0f));
+	s_state.clear_color = vec4_create(0.0f, 0.0f, 0.0f, 1.0f);
 
-	// TODO: temporary
+	// For ray tracing
 	s_state.accumulation_buffer = memory_allocate(sizeof(vec4) * width * height, MEMORY_TAG_ARRAY);
 	s_state.frame_count = 1;
 }
@@ -27,20 +28,106 @@ void renderer_swap_buffers()
 	platform_present(s_state.buffer);
 }
 
-void renderer_clear(vec4 color)
+void renderer_set_clear_color(vec4 color)
 {
-	image_fill(s_state.buffer, color);
+	s_state.clear_color = color;
+}
+
+void renderer_clear()
+{
+	image_fill(s_state.buffer, s_state.clear_color);
 }
 
 void renderer_shutdown()
 {
-	// TODO: temporary
-	memory_free(s_state.accumulation_buffer, s_state.buffer->width * s_state.buffer->height * sizeof(vec4), MEMORY_TAG_ARRAY);
+	// For ray tracing
+	memory_free(s_state.accumulation_buffer, image_get_width(s_state.buffer) * image_get_height(s_state.buffer) * sizeof(vec4), MEMORY_TAG_ARRAY);
 
 	image_destroy(s_state.buffer);
 }
 
-// TODO: temporary
+// --- Rasterization pipeline ---
+
+// Bresenham's line algorithm
+// see: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+void draw_line(vec2 p0, vec2 p1, vec4 color)
+{
+	// Temporary
+	CORE_ASSERT(p0.x >= 0 && p0.x < image_get_width(s_state.buffer), "draw_line - p0.x out of bounds");
+	CORE_ASSERT(p0.y >= 0 && p0.y < image_get_height(s_state.buffer), "draw_line - p0.y out of bounds");
+	CORE_ASSERT(p1.x >= 0 && p1.x < image_get_width(s_state.buffer), "draw_line - p1.x out of bounds");
+	CORE_ASSERT(p1.y >= 0 && p1.y < image_get_height(s_state.buffer), "draw_line - p1.y out of bounds");
+
+	b8 steep = f32_abs(p1.y - p0.y) > f32_abs(p1.x - p0.x);
+	i32 x0 = (i32)p0.x;
+	i32 y0 = (i32)p0.y;
+	i32 x1 = (i32)p1.x;
+	i32 y1 = (i32)p1.y;
+
+	if (steep)
+	{
+		i32_swap(&x0, &y0);
+		i32_swap(&x1, &y1);
+	}
+
+	if (x0 > x1)
+	{
+		i32_swap(&x0, &x1);
+		i32_swap(&y0, &y1);
+	}
+
+	i32 deltax = x1 - x0;
+	i32 deltay = i32_abs(y1 - y0);
+	i32 error = deltax / 2;
+	i32 y = y0;
+	i32 ystep = (y0 < y1) ? 1 : -1;
+
+	for (i32 x = x0; x <= x1; x++)
+	{
+		if (steep)
+		{
+			image_set_pixel(s_state.buffer, (u32)y + (u32)x * image_get_width(s_state.buffer), color);
+		}
+		else
+		{
+			image_set_pixel(s_state.buffer, (u32)x + (u32)y * image_get_width(s_state.buffer), color);
+		}
+
+		error -= deltay;
+		if (error < 0)
+		{
+			y += ystep;
+			error += deltax;
+		}
+	}
+}
+
+// Temporary
+void draw_triangle(vec2 p0, vec2 p1, vec2 p2, vec4 color)
+{
+	draw_line(p0, p1, color);
+	draw_line(p1, p2, color);
+	draw_line(p2, p0, color);
+}
+
+void renderer_draw(scene* scene, camera* cam)
+{
+	image_fill(s_state.buffer, s_state.clear_color);
+
+	// Temporary
+	vec4 color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
+	draw_triangle(vec2_create(200.0f, 200.0f), vec2_create(300.0f, 200.0f), vec2_create(250.0f, 300.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	draw_triangle(vec2_create(900.0f, 200.0f), vec2_create(1000.0f, 200.0f), vec2_create(950.0f, 300.0f), vec4_create(0.0f, 1.0f, 0.0f, 1.0f));
+	draw_triangle(vec2_create(500.0f, 400.0f), vec2_create(600.0f, 400.0f), vec2_create(550.0f, 500.0f), vec4_create(0.0f, 0.0f, 1.0f, 1.0f));
+	draw_line(vec2_zero, vec2_create(1279.0f, 719.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	draw_line(vec2_create(0, 719.0f), vec2_create(1279.0f, 0.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	draw_line(vec2_create(0, 360.0f), vec2_create(1279.0f, 360.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	draw_line(vec2_create(640.0f, 0.0f), vec2_create(640.0f, 719.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+}
+
+// ------------------------------
+
+// --- Ray tracing pipeline ---
 typedef struct {
 	f32 hit_distance;
 	vec3 world_position;
@@ -124,7 +211,7 @@ vec4 per_pixel(scene* scene, camera* cam, u32 x, u32 y)
 {
 	ray ray;
 	ray.origin = camera_get_position(cam);
-	ray.direction = *(vec3*)darray_get(cam->ray_directions, x + y * s_state.buffer->width);
+	ray.direction = *(vec3*)darray_get(cam->ray_directions, x + y * image_get_width(s_state.buffer));
 
 	vec3 light = vec3_zero;
 	vec3 contribution = vec3_one;
@@ -156,23 +243,25 @@ vec4 per_pixel(scene* scene, camera* cam, u32 x, u32 y)
 
 void renderer_rt_draw(scene* scene, camera* cam)
 {
+	image_fill(s_state.buffer, s_state.clear_color);
+
 	if (s_state.frame_count == 1)
 	{
-		memory_zero(s_state.accumulation_buffer, s_state.buffer->width * s_state.buffer->height * sizeof(vec4));
+		memory_zero(s_state.accumulation_buffer, image_get_width(s_state.buffer) * image_get_height(s_state.buffer) * sizeof(vec4));
 	}
 
-	for (u32 y = 0; y < s_state.buffer->height; y++)
+	for (u32 y = 0; y < image_get_height(s_state.buffer); y++)
 	{
-		for (u32 x = 0; x < s_state.buffer->width; x++)
+		for (u32 x = 0; x < image_get_width(s_state.buffer); x++)
 		{
 			vec4 color = per_pixel(scene, cam, x, y);
-			s_state.accumulation_buffer[x + y * s_state.buffer->width] = vec4_add(s_state.accumulation_buffer[x + y * s_state.buffer->width], color);
+			s_state.accumulation_buffer[x + y * image_get_width(s_state.buffer)] = vec4_add(s_state.accumulation_buffer[x + y * image_get_width(s_state.buffer)], color);
 
-			vec4 accumulated_color = s_state.accumulation_buffer[x + y * s_state.buffer->width];
+			vec4 accumulated_color = s_state.accumulation_buffer[x + y * image_get_width(s_state.buffer)];
 			accumulated_color = vec4_div(accumulated_color, (f32)s_state.frame_count);
 
 			accumulated_color = vec4_clamp(accumulated_color, vec4_zero, vec4_one);
-			image_set_pixel(s_state.buffer, x + y * s_state.buffer->width, accumulated_color);
+			image_set_pixel(s_state.buffer, x + y * image_get_width(s_state.buffer), accumulated_color);
 		}
 	}
 
@@ -183,3 +272,4 @@ void renderer_reset_frame_count()
 {
 	s_state.frame_count = 1;
 }
+// ----------------------------

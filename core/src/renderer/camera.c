@@ -139,7 +139,7 @@ void camera_resize(camera* cam, u32 width, u32 height)
 	recalculate_ray_directions(cam);
 }
 
-void camera_release(camera* cam)
+void camera_destroy(camera* cam)
 {
 	darray_destroy(cam->ray_directions);
 }

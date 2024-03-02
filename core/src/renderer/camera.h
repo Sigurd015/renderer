@@ -20,7 +20,7 @@ typedef struct {
 void camera_create(camera* cam, f32 fov, f32 near_plane, f32 far_plane, u32 viewport_width, u32 viewport_height);
 b8 camera_update(camera* cam, f32 delta_time);
 void camera_resize(camera* cam, u32 width, u32 height);
-void camera_release(camera* cam);
+void camera_destroy(camera* cam);
 mat4 camera_get_view(camera* cam);
 mat4 camera_get_projection(camera* cam);
 mat4 camera_get_inverse_view(camera* cam);

@@ -13,7 +13,10 @@
 // -- Scalar types --
 i32 i32_random();
 i32 i32_random_range(i32 min, i32 max);
+i32 i32_abs(i32 i);
+void i32_swap(i32* a, i32* b);
 
+f32 f32_abs(f32 f);
 f32 f32_sqrt(f32 f);
 f32 f32_clamp(f32 f, f32 min, f32 max);
 f32 f32_sin(f32 f);

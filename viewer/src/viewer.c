@@ -1,12 +1,16 @@
 #include "core.h"
 #include "entry.h"
 
-// TODO: temporary
 #define WINDOW_WIDTH 1280	
 #define WINDOW_HEIGHT 720
 
 static scene s_scene;
 static camera s_camera;
+typedef enum {
+	TEST_RASTERIZATION,
+	TEST_RAY_TRACING
+} test_type;
+static test_type s_test_type = TEST_RASTERIZATION;
 
 void viewer_init()
 {
@@ -48,10 +52,11 @@ void viewer_init()
 
 	darray_destroy(dary);
 
-	// TODO: temporary
+	// TODO: may move to scene_create
 	camera_create(&s_camera, DEG_TO_RAD(45.0f), 0.1f, 100.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
 	s_scene.materials = darray_create(material);
 	s_scene.spheres = darray_create(sphere);
+	s_scene.triangles = darray_create(triangle);
 
 	material mat;
 	mat.albedo = vec3_one;
@@ -114,42 +119,59 @@ void viewer_update(f32 delta_time)
 {
 	//APP_LOG_INFO("Viewer update - %f", delta_time);
 
-#if 0
-	vec4 color = vec4_zero;
-
-	if (input_is_key(KEY_Q))
+	if (input_is_key_down(KEY_D1))
 	{
-		color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
+		s_test_type = TEST_RASTERIZATION;
 	}
-	else if (input_is_key(KEY_W))
+	else if (input_is_key_down(KEY_D2))
 	{
-		color = vec4_create(0.0f, 1.0f, 0.0f, 1.0f);
-	}
-	else if (input_is_key(KEY_E))
-	{
-		color = vec4_create(0.0f, 0.0f, 1.0f, 1.0f);
-	}
-	else if (input_is_key(KEY_R))
-	{
-		color = vec4_create(1.0f, 1.0f, 1.0f, 1.0f);
-	}
-	renderer_clear(color);
-#else
-	if (camera_update(&s_camera, delta_time))
-	{
-		renderer_reset_frame_count();
+		s_test_type = TEST_RAY_TRACING;
 	}
 
+	switch (s_test_type)
+	{
+	case TEST_RASTERIZATION:
+	{
+		vec4 color = vec4_zero;
 
-	renderer_rt_draw(&s_scene, &s_camera);
-#endif
+		if (input_is_key(KEY_Q))
+		{
+			color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+		else if (input_is_key(KEY_W))
+		{
+			color = vec4_create(0.0f, 1.0f, 0.0f, 1.0f);
+		}
+		else if (input_is_key(KEY_E))
+		{
+			color = vec4_create(0.0f, 0.0f, 1.0f, 1.0f);
+		}
+		else if (input_is_key(KEY_R))
+		{
+			color = vec4_create(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		renderer_set_clear_color(color);
+		renderer_draw(&s_scene, &s_camera);
+		break;
+	}
+	case TEST_RAY_TRACING:
+	{
+		if (camera_update(&s_camera, delta_time))
+		{
+			renderer_reset_frame_count();
+		}
+		renderer_rt_draw(&s_scene, &s_camera);
+		break;
+	}
+	}
 }
 
 void viewer_shutdown()
 {
-	camera_release(&s_camera);
+	camera_destroy(&s_camera);
 	darray_destroy(s_scene.materials);
 	darray_destroy(s_scene.spheres);
+	darray_destroy(s_scene.triangles);
 }
 
 b8 viewer_on_wnd_resize(event e)
