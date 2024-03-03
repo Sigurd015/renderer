@@ -184,6 +184,7 @@ u32 vec4_to_abgr_u32(vec4 color);
 							   0.0f, 0.0f, 1.0f, 0.0f, \
 							   0.0f, 0.0f, 0.0f, 1.0f }
 
+vec4 mat4_mul_vec4(mat4 m, vec4 v);
 mat4 mat4_mul(mat4 left, mat4 right);
 mat4 mat4_ortographic(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 // Fov is in radians

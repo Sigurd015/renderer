@@ -15,4 +15,7 @@
 // ----- renderer -----
 #include "renderer/renderer.h"
 #include "renderer/camera.h"
-#include "renderer/scene.h"
+
+// ----- scene -----
+#include "scene/entity.h"
+#include "scene/scene.h"

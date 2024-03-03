@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "math/math.h"
 #include "containers/darray.h"
+#include "scene/entity.h"
 
 typedef struct {
 	vec3 position;
@@ -15,6 +16,7 @@ typedef struct {
 	vertex vertices[3];
 } triangle;
 
+// TODO: Temporarily for ray tracing
 typedef struct {
 	vec3 albedo;
 	f32 metallic;
@@ -31,10 +33,13 @@ typedef struct {
 } sphere;
 
 typedef struct {
-	// For ray tracing, currently only supports spheres
+	// TODO: Temporarily for ray tracing
 	darray* spheres;
 
-	// For rasterization, may move to mesh when implemented mesh support
-	darray* triangles;
+	darray* entities;
 	darray* materials;
 } scene;
+
+void scene_create(scene* s);
+void scene_destroy(scene* s);
+void scene_add_entity(scene* s, entity* e);

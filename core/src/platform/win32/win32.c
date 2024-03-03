@@ -47,6 +47,8 @@ LRESULT msg_proc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 		}
 
+		// TODO: Resize back buffer
+
 		event_context context = { 0 };
 		context.wnd_resize.width = LOWORD(lParam);
 		context.wnd_resize.height = HIWORD(lParam);

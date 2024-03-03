@@ -1,10 +1,11 @@
 #pragma once
 #include "image.h"
-#include "scene.h"
+#include "scene/scene.h"
 #include "camera.h"
 
 void renderer_init(u32 width, u32 height, image_format format);
 void renderer_swap_buffers();
+void renderer_resize(u32 width, u32 height);
 void renderer_set_clear_color(vec4 color);
 void renderer_clear();
 void renderer_shutdown();

@@ -28,6 +28,11 @@ void renderer_swap_buffers()
 	platform_present(s_state.buffer);
 }
 
+void renderer_resize(u32 width, u32 height)
+{
+	// Resize buffer
+}
+
 void renderer_set_clear_color(vec4 color)
 {
 	s_state.clear_color = color;
@@ -46,7 +51,105 @@ void renderer_shutdown()
 	image_destroy(s_state.buffer);
 }
 
-// --- Rasterization pipeline ---
+#pragma region Rasterization pipeline
+// Cohen¨CSutherland line clipping algorithm
+// see: https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+typedef i32 out_code;
+const i32 INSIDE = 0; // 0000
+const i32 LEFT = 1;   // 0001
+const i32 RIGHT = 2;  // 0010
+const i32 BOTTOM = 4; // 0100
+const i32 TOP = 8;    // 1000
+
+// Compute the bit code for a point (x, y) using the clip rectangle
+// bounded diagonally by (xmin, ymin), and (xmax, ymax)
+
+// ASSUME THAT xmax, xmin, ymax and ymin are global constants.
+out_code compute_out_code(const vec2* point, const vec2* min, const vec2* max)
+{
+	out_code code = INSIDE;  // initialised as being inside of clip window
+
+	if (point->x < min->x)           // to the left of clip window
+		code |= LEFT;
+	else if (point->x > max->x)      // to the right of clip window
+		code |= RIGHT;
+	if (point->y < min->y)           // below the clip window
+		code |= BOTTOM;
+	else if (point->y > max->y)      // above the clip window
+		code |= TOP;
+
+	return code;
+}
+
+// Cohen¨CSutherland clipping algorithm clips a line from
+// P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with 
+// diagonal from (xmin, ymin) to (xmax, ymax).
+b8 cohen_sutherland_line_clip(vec2* p0, vec2* p1, vec2 min, vec2 max)
+{
+	// compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
+	out_code outcode0 = compute_out_code(p0, &min, &max);
+	out_code outcode1 = compute_out_code(p1, &min, &max);
+	b8 accept = FALSE;
+
+	while (TRUE) {
+		if (!(outcode0 | outcode1)) {
+			// bitwise OR is 0: both points inside window; trivially accept and exit loop
+			accept = TRUE;
+			break;
+		}
+		else if (outcode0 & outcode1) {
+			// bitwise AND is not 0: both points share an outside zone (LEFT, RIGHT, TOP,
+			// or BOTTOM), so both must be outside window; exit loop (accept is false)
+			break;
+		}
+		else {
+			// failed both tests, so calculate the line segment to clip
+			// from an outside point to an intersection with clip edge
+			double x, y;
+
+			// At least one endpoint is outside the clip rectangle; pick it.
+			out_code outcodeOut = outcode1 > outcode0 ? outcode1 : outcode0;
+
+			// Now find the intersection point;
+			// use formulas:
+			//   slope = (y1 - y0) / (x1 - x0)
+			//   x = x0 + (1 / slope) * (ym - y0), where ym is ymin or ymax
+			//   y = y0 + slope * (xm - x0), where xm is xmin or xmax
+			// No need to worry about divide-by-zero because, in each case, the
+			// outcode bit being tested guarantees the denominator is non-zero
+			if (outcodeOut & TOP) {           // point is above the clip window
+				x = p0->x + (p1->x - p0->x) * (max.y - p0->y) / (p1->y - p0->y);
+				y = max.y;
+			}
+			else if (outcodeOut & BOTTOM) { // point is below the clip window
+				x = p0->x + (p1->x - p0->x) * (min.y - p0->y) / (p1->y - p0->y);
+				y = min.y;
+			}
+			else if (outcodeOut & RIGHT) {  // point is to the right of clip window
+				y = p0->y + (p1->y - p0->y) * (max.x - p0->x) / (p1->x - p0->x);
+				x = max.x;
+			}
+			else if (outcodeOut & LEFT) {   // point is to the left of clip window
+				y = p0->y + (p1->y - p0->y) * (min.x - p0->x) / (p1->x - p0->x);
+				x = min.x;
+			}
+
+			// Now we move outside point to intersection point to clip
+			// and get ready for next pass.
+			if (outcodeOut == outcode0) {
+				p0->x = x;
+				p0->y = y;
+				outcode0 = compute_out_code(p0, &min, &max);
+			}
+			else {
+				p1->x = x;
+				p1->y = y;
+				outcode1 = compute_out_code(p1, &min, &max);
+			}
+		}
+	}
+	return accept;
+}
 
 // Bresenham's line algorithm
 // see: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
@@ -58,56 +161,56 @@ void draw_line(vec2 p0, vec2 p1, vec4 color)
 	CORE_ASSERT(p1.x >= 0 && p1.x < image_get_width(s_state.buffer), "draw_line - p1.x out of bounds");
 	CORE_ASSERT(p1.y >= 0 && p1.y < image_get_height(s_state.buffer), "draw_line - p1.y out of bounds");
 
-	b8 steep = f32_abs(p1.y - p0.y) > f32_abs(p1.x - p0.x);
 	i32 x0 = (i32)p0.x;
 	i32 y0 = (i32)p0.y;
 	i32 x1 = (i32)p1.x;
 	i32 y1 = (i32)p1.y;
 
-	if (steep)
-	{
-		i32_swap(&x0, &y0);
-		i32_swap(&x1, &y1);
-	}
+	i32 dx = i32_abs(x1 - x0);
+	i32 sx = x0 < x1 ? 1 : -1;
+	i32 dy = -i32_abs(y1 - y0);
+	i32 sy = y0 < y1 ? 1 : -1;
+	i32 err = dx + dy;
 
-	if (x0 > x1)
+	while (TRUE)
 	{
-		i32_swap(&x0, &x1);
-		i32_swap(&y0, &y1);
-	}
+		image_set_pixel(s_state.buffer, (u32)x0 + (u32)y0 * image_get_width(s_state.buffer), color);
+		if (x0 == x1 && y0 == y1)
+			break;
 
-	i32 deltax = x1 - x0;
-	i32 deltay = i32_abs(y1 - y0);
-	i32 error = deltax / 2;
-	i32 y = y0;
-	i32 ystep = (y0 < y1) ? 1 : -1;
-
-	for (i32 x = x0; x <= x1; x++)
-	{
-		if (steep)
+		i32 e2 = 2 * err;
+		if (e2 >= dy)
 		{
-			image_set_pixel(s_state.buffer, (u32)y + (u32)x * image_get_width(s_state.buffer), color);
+			if (x0 == x1)
+				break;
+			err += dy;
+			x0 += sx;
 		}
-		else
+		if (e2 <= dx)
 		{
-			image_set_pixel(s_state.buffer, (u32)x + (u32)y * image_get_width(s_state.buffer), color);
-		}
-
-		error -= deltay;
-		if (error < 0)
-		{
-			y += ystep;
-			error += deltax;
+			if (y0 == y1)
+				break;
+			err += dx;
+			y0 += sy;
 		}
 	}
+}
+
+void draw_line_clipped(vec2 p0, vec2 p1, vec4 color)
+{
+	vec2 min = vec2_zero;
+	vec2 max = vec2_create((f32)image_get_width(s_state.buffer) - 1.0f, (f32)image_get_height(s_state.buffer) - 1.0f);
+
+	if (cohen_sutherland_line_clip(&p0, &p1, min, max))
+		draw_line(p0, p1, color);
 }
 
 // Temporary
 void draw_triangle(vec2 p0, vec2 p1, vec2 p2, vec4 color)
 {
-	draw_line(p0, p1, color);
-	draw_line(p1, p2, color);
-	draw_line(p2, p0, color);
+	draw_line_clipped(p0, p1, color);
+	draw_line_clipped(p1, p2, color);
+	draw_line_clipped(p2, p0, color);
 }
 
 void renderer_draw(scene* scene, camera* cam)
@@ -116,18 +219,48 @@ void renderer_draw(scene* scene, camera* cam)
 
 	// Temporary
 	vec4 color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
-	draw_triangle(vec2_create(200.0f, 200.0f), vec2_create(300.0f, 200.0f), vec2_create(250.0f, 300.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
-	draw_triangle(vec2_create(900.0f, 200.0f), vec2_create(1000.0f, 200.0f), vec2_create(950.0f, 300.0f), vec4_create(0.0f, 1.0f, 0.0f, 1.0f));
-	draw_triangle(vec2_create(500.0f, 400.0f), vec2_create(600.0f, 400.0f), vec2_create(550.0f, 500.0f), vec4_create(0.0f, 0.0f, 1.0f, 1.0f));
-	draw_line(vec2_zero, vec2_create(1279.0f, 719.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
-	draw_line(vec2_create(0, 719.0f), vec2_create(1279.0f, 0.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
-	draw_line(vec2_create(0, 360.0f), vec2_create(1279.0f, 360.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
-	draw_line(vec2_create(640.0f, 0.0f), vec2_create(640.0f, 719.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	//draw_triangle(vec2_create(200.0f, 200.0f), vec2_create(300.0f, 200.0f), vec2_create(250.0f, 300.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	//draw_triangle(vec2_create(900.0f, 200.0f), vec2_create(1000.0f, 200.0f), vec2_create(950.0f, 300.0f), vec4_create(0.0f, 1.0f, 0.0f, 1.0f));
+	//draw_triangle(vec2_create(500.0f, 400.0f), vec2_create(600.0f, 400.0f), vec2_create(550.0f, 500.0f), vec4_create(0.0f, 0.0f, 1.0f, 1.0f));
+	//draw_line_clipped(vec2_zero, vec2_create(1280.0f, 720.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	//draw_line_clipped(vec2_create(0, 720.0f), vec2_create(1280.0f, 0.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	//draw_line_clipped(vec2_create(0, 360.0f), vec2_create(1280.0f, 360.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+	//draw_line_clipped(vec2_create(640.0f, 0.0f), vec2_create(640.0f, 720.0f), vec4_create(1.0f, 0.0f, 0.0f, 1.0f));
+
+	vertex v0 = { vec3_create(-1.0f, -1.0f, 0.0f) };
+	vertex v1 = { vec3_create(1.0f, -1.0f, 0.0f) };
+	vertex v2 = { vec3_create(0.0f, 1.0f, 0.0f) };
+
+	vec3 position = vec3_create(0.0f, 0.0f, 5.0f);
+	vec3 rotation = vec3_zero;
+	vec3 scale = vec3_create(0.5f, 0.5f, 0.5f);
+	rotation.z = DEG_TO_RAD(45.0f);
+	mat4 model = mat4_mul(mat4_translation(position), mat4_mul(mat4_euler_xyz(rotation.x, rotation.y, rotation.z), mat4_scale(scale)));
+	mat4 mvp = mat4_mul(camera_get_projection(cam), mat4_mul(camera_get_view(cam), model));
+
+	vec4 v0_position = mat4_mul_vec4(mvp, vec4_create_from_vec3(v0.position, 1.0f));
+	v0.position = vec3_create(v0_position.x / v0_position.w, v0_position.y / v0_position.w, v0_position.z / v0_position.w);
+
+	vec4 v1_position = mat4_mul_vec4(mvp, vec4_create_from_vec3(v1.position, 1.0f));
+	v1.position = vec3_create(v1_position.x / v1_position.w, v1_position.y / v1_position.w, v1_position.z / v1_position.w);
+
+	vec4 v2_position = mat4_mul_vec4(mvp, vec4_create_from_vec3(v2.position, 1.0f));
+	v2.position = vec3_create(v2_position.x / v2_position.w, v2_position.y / v2_position.w, v2_position.z / v2_position.w);
+
+	v0.position.x = (v0.position.x + 1.0f) * 0.5f * ((f32)image_get_width(s_state.buffer) - 1.0f);
+	v0.position.y = (v0.position.y + 1.0f) * 0.5f * ((f32)image_get_height(s_state.buffer) - 1.0f);
+
+	v1.position.x = (v1.position.x + 1.0f) * 0.5f * ((f32)image_get_width(s_state.buffer) - 1.0f);
+	v1.position.y = (v1.position.y + 1.0f) * 0.5f * ((f32)image_get_height(s_state.buffer) - 1.0f);
+
+	v2.position.x = (v2.position.x + 1.0f) * 0.5f * ((f32)image_get_width(s_state.buffer) - 1.0f);
+	v2.position.y = (v2.position.y + 1.0f) * 0.5f * ((f32)image_get_height(s_state.buffer) - 1.0f);
+
+	draw_triangle(vec2_create(v0.position.x, v0.position.y), vec2_create(v1.position.x, v1.position.y), vec2_create(v2.position.x, v2.position.y), color);
 }
+#pragma endregion
 
-// ------------------------------
-
-// --- Ray tracing pipeline ---
+#pragma region Ray tracing pipeline
 typedef struct {
 	f32 hit_distance;
 	vec3 world_position;
@@ -272,4 +405,4 @@ void renderer_reset_frame_count()
 {
 	s_state.frame_count = 1;
 }
-// ----------------------------
+#pragma endregion

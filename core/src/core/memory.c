@@ -13,7 +13,8 @@ const char* memory_block_str[MEMORY_TAG_COUNT] = {
 	"Array",
 	"DArray",
 	"String",
-	"Image"
+	"Image",
+	"Component"
 };
 
 void memory_init()

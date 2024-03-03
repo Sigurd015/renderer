@@ -30,8 +30,7 @@ b8 on_wnd_resize(event e)
 	else
 	{
 		s_state.minimized = FALSE;
-		// TODO: Handle resize
-
+		renderer_resize(e.context.wnd_resize.width, e.context.wnd_resize.height);
 		return FALSE;
 	}
 }

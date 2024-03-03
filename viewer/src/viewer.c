@@ -54,64 +54,90 @@ void viewer_init()
 
 	// TODO: may move to scene_create
 	camera_create(&s_camera, DEG_TO_RAD(45.0f), 0.1f, 100.0f, WINDOW_WIDTH, WINDOW_HEIGHT);
-	s_scene.materials = darray_create(material);
-	s_scene.spheres = darray_create(sphere);
-	s_scene.triangles = darray_create(triangle);
+	scene_create(&s_scene);
 
-	material mat;
-	mat.albedo = vec3_one;
-	mat.roughness = 1.0f;
-	mat.metallic = 0.0f;
-	mat.emission_color = vec3_zero;
-	mat.emission_power = 0.0f;
-
-	// Pink
+	// TODO: Temp for ray tracing
 	{
-		mat.albedo = vec3_create(1.0f, 0.0f, 1.0f);
-		mat.roughness = 0.0f;
-		s_scene.materials = darray_push(s_scene.materials, &mat);
-	}
+		material mat;
+		mat.albedo = vec3_one;
+		mat.roughness = 1.0f;
+		mat.metallic = 0.0f;
+		mat.emission_color = vec3_zero;
+		mat.emission_power = 0.0f;
 
-	// Blue
-	{
-		mat.albedo = vec3_create(0.2f, 0.3f, 1.0f);
-		mat.roughness = 0.1f;
-		s_scene.materials = darray_push(s_scene.materials, &mat);
-	}
+		// Pink
+		{
+			mat.albedo = vec3_create(1.0f, 0.0f, 1.0f);
+			mat.roughness = 0.0f;
+			s_scene.materials = darray_push(s_scene.materials, &mat);
+		}
 
-	// Orange
-	{
-		mat.albedo = vec3_create(0.8f, 0.5f, 0.2f);
-		mat.roughness = 0.1f;
-		mat.emission_color = mat.albedo;
-		mat.emission_power = 2.0f;
-		s_scene.materials = darray_push(s_scene.materials, &mat);
-	}
+		// Blue
+		{
+			mat.albedo = vec3_create(0.2f, 0.3f, 1.0f);
+			mat.roughness = 0.1f;
+			s_scene.materials = darray_push(s_scene.materials, &mat);
+		}
 
-	sphere sphere;
-	sphere.position = vec3_zero;
-	sphere.radius = 0.5f;
-	sphere.material_index = 0;
+		// Orange
+		{
+			mat.albedo = vec3_create(0.8f, 0.5f, 0.2f);
+			mat.roughness = 0.1f;
+			mat.emission_color = mat.albedo;
+			mat.emission_power = 2.0f;
+			s_scene.materials = darray_push(s_scene.materials, &mat);
+		}
 
-	{
+		sphere sphere;
 		sphere.position = vec3_zero;
-		sphere.radius = 1.0f;
+		sphere.radius = 0.5f;
 		sphere.material_index = 0;
-		s_scene.spheres = darray_push(s_scene.spheres, &sphere);
+
+		{
+			sphere.position = vec3_zero;
+			sphere.radius = 1.0f;
+			sphere.material_index = 0;
+			s_scene.spheres = darray_push(s_scene.spheres, &sphere);
+		}
+
+		{
+			sphere.position = vec3_create(0.0f, -101.0f, 0.0f);
+			sphere.radius = 100.0f;
+			sphere.material_index = 1;
+			s_scene.spheres = darray_push(s_scene.spheres, &sphere);
+		}
+
+		{
+			sphere.position = vec3_create(2.0f, 0.0f, 0.0f);
+			sphere.radius = 1.0f;
+			sphere.material_index = 2;
+			s_scene.spheres = darray_push(s_scene.spheres, &sphere);
+		}
 	}
 
 	{
-		sphere.position = vec3_create(0.0f, -101.0f, 0.0f);
-		sphere.radius = 100.0f;
-		sphere.material_index = 1;
-		s_scene.spheres = darray_push(s_scene.spheres, &sphere);
-	}
+		entity e;
+		entity_create(&e);
 
-	{
-		sphere.position = vec3_create(2.0f, 0.0f, 0.0f);
-		sphere.radius = 1.0f;
-		sphere.material_index = 2;
-		s_scene.spheres = darray_push(s_scene.spheres, &sphere);
+		transform_component tc;
+		tc.position = vec3_zero;
+		tc.scale = vec3_create(1.0f, 1.0f, 1.0f);
+		tc.rotation = vec3_zero;
+
+		entity_add_component(&e, COMPONENT_TRANSFORM, &tc);
+
+	/*	mesh_component mc;
+		mc.triangles = darray_create(triangle);
+		{
+			triangle t;
+			t.vertices[0].position = vec3_create(-1.0f, -1.0f, 0.0f);
+			t.vertices[1].position = vec3_create(1.0f, -1.0f, 0.0f);
+			t.vertices[2].position = vec3_create(0.0f, 1.0f, 0.0f);
+			mc.triangles = darray_push(mc.triangles, &t);
+		}
+		entity_add_component(&e, COMPONENT_MESH, &mc);*/
+
+		scene_add_entity(&s_scene, &e);
 	}
 }
 
@@ -132,25 +158,7 @@ void viewer_update(f32 delta_time)
 	{
 	case TEST_RASTERIZATION:
 	{
-		vec4 color = vec4_zero;
-
-		if (input_is_key(KEY_Q))
-		{
-			color = vec4_create(1.0f, 0.0f, 0.0f, 1.0f);
-		}
-		else if (input_is_key(KEY_W))
-		{
-			color = vec4_create(0.0f, 1.0f, 0.0f, 1.0f);
-		}
-		else if (input_is_key(KEY_E))
-		{
-			color = vec4_create(0.0f, 0.0f, 1.0f, 1.0f);
-		}
-		else if (input_is_key(KEY_R))
-		{
-			color = vec4_create(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		renderer_set_clear_color(color);
+		camera_update(&s_camera, delta_time);
 		renderer_draw(&s_scene, &s_camera);
 		break;
 	}
@@ -169,9 +177,7 @@ void viewer_update(f32 delta_time)
 void viewer_shutdown()
 {
 	camera_destroy(&s_camera);
-	darray_destroy(s_scene.materials);
-	darray_destroy(s_scene.spheres);
-	darray_destroy(s_scene.triangles);
+	scene_destroy(&s_scene);
 }
 
 b8 viewer_on_wnd_resize(event e)

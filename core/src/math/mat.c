@@ -3,10 +3,20 @@
 
 #include <math.h>
 
+vec4 mat4_mul_vec4(mat4 m, vec4 v)
+{
+	vec4 result;
+	result.x = m.elements[0] * v.x + m.elements[4] * v.y + m.elements[8] * v.z + m.elements[12] * v.w;
+	result.y = m.elements[1] * v.x + m.elements[5] * v.y + m.elements[9] * v.z + m.elements[13] * v.w;
+	result.z = m.elements[2] * v.x + m.elements[6] * v.y + m.elements[10] * v.z + m.elements[14] * v.w;
+	result.w = m.elements[3] * v.x + m.elements[7] * v.y + m.elements[11] * v.z + m.elements[15] * v.w;
+	return result;
+}
+
 // -- Matrix 4x4 --
 mat4 mat4_mul(mat4 left, mat4 right)
 {
-	mat4 result;
+	mat4 result = mat4_identity;
 	f32* dest = (f32*)result.elements;
 	f32* l = (f32*)left.elements;
 	f32* r = (f32*)right.elements;
@@ -23,6 +33,7 @@ mat4 mat4_mul(mat4 left, mat4 right)
 		}
 		l += 4;
 	}
+	return result;
 }
 
 mat4 mat4_ortographic(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
