@@ -126,16 +126,16 @@ void viewer_init()
 
 		entity_add_component(&e, COMPONENT_TRANSFORM, &tc);
 
-	/*	mesh_component mc;
-		mc.triangles = darray_create(triangle);
-		{
-			triangle t;
-			t.vertices[0].position = vec3_create(-1.0f, -1.0f, 0.0f);
-			t.vertices[1].position = vec3_create(1.0f, -1.0f, 0.0f);
-			t.vertices[2].position = vec3_create(0.0f, 1.0f, 0.0f);
-			mc.triangles = darray_push(mc.triangles, &t);
-		}
-		entity_add_component(&e, COMPONENT_MESH, &mc);*/
+		/*	mesh_component mc;
+			mc.triangles = darray_create(triangle);
+			{
+				triangle t;
+				t.vertices[0].position = vec3_create(-1.0f, -1.0f, 0.0f);
+				t.vertices[1].position = vec3_create(1.0f, -1.0f, 0.0f);
+				t.vertices[2].position = vec3_create(0.0f, 1.0f, 0.0f);
+				mc.triangles = darray_push(mc.triangles, &t);
+			}
+			entity_add_component(&e, COMPONENT_MESH, &mc);*/
 
 		scene_add_entity(&s_scene, &e);
 	}
@@ -159,6 +159,10 @@ void viewer_update(f32 delta_time)
 	case TEST_RASTERIZATION:
 	{
 		camera_update(&s_camera, delta_time);
+
+		entity* e = darray_get(s_scene.entities, 0);
+		transform_component* tc = entity_get_component(e, COMPONENT_TRANSFORM);
+		tc->rotation.z += DEG_TO_RAD(15.0f) * delta_time;
 		renderer_draw(&s_scene, &s_camera);
 		break;
 	}

@@ -15,6 +15,8 @@ typedef struct {
 	vec3 scale;
 } transform_component;
 
+mat4 transform_get_matrix(transform_component* t);
+
 typedef struct {
 	// TODO: may move to mesh when implemented mesh support
 	darray* triangles;

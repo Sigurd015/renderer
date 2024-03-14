@@ -231,12 +231,9 @@ void renderer_draw(scene* scene, camera* cam)
 	vertex v1 = { vec3_create(1.0f, -1.0f, 0.0f) };
 	vertex v2 = { vec3_create(0.0f, 1.0f, 0.0f) };
 
-	vec3 position = vec3_create(0.0f, 0.0f, 5.0f);
-	vec3 rotation = vec3_zero;
-	vec3 scale = vec3_create(0.5f, 0.5f, 0.5f);
-	rotation.z = DEG_TO_RAD(45.0f);
-	mat4 model = mat4_mul(mat4_translation(position), mat4_mul(mat4_euler_xyz(rotation.x, rotation.y, rotation.z), mat4_scale(scale)));
-	mat4 mvp = mat4_mul(camera_get_projection(cam), mat4_mul(camera_get_view(cam), model));
+	entity* entity = darray_get(scene->entities, 0); // Temporary, only one entity
+	transform_component* tc = entity_get_component(entity, COMPONENT_TRANSFORM);
+	mat4 mvp = mat4_mul(camera_get_projection(cam), mat4_mul(camera_get_view(cam), transform_get_matrix(tc)));
 
 	vec4 v0_position = mat4_mul_vec4(mvp, vec4_create_from_vec3(v0.position, 1.0f));
 	v0.position = vec3_create(v0_position.x / v0_position.w, v0_position.y / v0_position.w, v0_position.z / v0_position.w);
@@ -247,14 +244,16 @@ void renderer_draw(scene* scene, camera* cam)
 	vec4 v2_position = mat4_mul_vec4(mvp, vec4_create_from_vec3(v2.position, 1.0f));
 	v2.position = vec3_create(v2_position.x / v2_position.w, v2_position.y / v2_position.w, v2_position.z / v2_position.w);
 
-	v0.position.x = (v0.position.x + 1.0f) * 0.5f * ((f32)image_get_width(s_state.buffer) - 1.0f);
-	v0.position.y = (v0.position.y + 1.0f) * 0.5f * ((f32)image_get_height(s_state.buffer) - 1.0f);
+	f32 width = (f32)image_get_width(s_state.buffer);
+	f32 height = (f32)image_get_height(s_state.buffer);
+	v0.position.x = v0.position.x * 0.5f * width + 0.5f * width;
+	v0.position.y = v0.position.y * 0.5f * height + 0.5f * height;
 
-	v1.position.x = (v1.position.x + 1.0f) * 0.5f * ((f32)image_get_width(s_state.buffer) - 1.0f);
-	v1.position.y = (v1.position.y + 1.0f) * 0.5f * ((f32)image_get_height(s_state.buffer) - 1.0f);
+	v1.position.x = v1.position.x * 0.5f * width + 0.5f * width;
+	v1.position.y = v1.position.y * 0.5f * height + 0.5f * height;
 
-	v2.position.x = (v2.position.x + 1.0f) * 0.5f * ((f32)image_get_width(s_state.buffer) - 1.0f);
-	v2.position.y = (v2.position.y + 1.0f) * 0.5f * ((f32)image_get_height(s_state.buffer) - 1.0f);
+	v2.position.x = v2.position.x * 0.5f * width + 0.5f * width;
+	v2.position.y = v2.position.y * 0.5f * height + 0.5f * height;
 
 	draw_triangle(vec2_create(v0.position.x, v0.position.y), vec2_create(v1.position.x, v1.position.y), vec2_create(v2.position.x, v2.position.y), color);
 }

@@ -99,12 +99,12 @@ b8 camera_update(camera* cam, f32 delta_time)
 
 	if (input_is_key(KEY_Q))
 	{
-		cam->position = vec3_sub(cam->position, vec3_mul_scalar(vec3_up, speed * delta_time));
+		cam->position = vec3_add(cam->position, vec3_mul_scalar(vec3_up, speed * delta_time));
 		moved = TRUE;
 	}
 	else if (input_is_key(KEY_E))
 	{
-		cam->position = vec3_add(cam->position, vec3_mul_scalar(vec3_up, speed * delta_time));
+		cam->position = vec3_sub(cam->position, vec3_mul_scalar(vec3_up, speed * delta_time));
 		moved = TRUE;
 	}
 

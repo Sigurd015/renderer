@@ -41,6 +41,19 @@ void entity_add_component(entity* e, component_type type, void* component)
 	memory_copy(e->components[type], component, s_component_sizes[type]);
 }
 
+void* entity_get_component(entity* e, component_type type)
+{
+	if (type == COMPONENT_TRANSFORM)
+	{
+		return &e->transform;
+	}
+
+	if (e->components[type])
+	{
+		return e->components[type];
+	}
+}
+
 void entity_remove_component(entity* e, component_type type)
 {
 	if (type == COMPONENT_TRANSFORM)

@@ -197,7 +197,7 @@ mat4 mat4_scale(vec3 scale);
 mat4 mat4_euler_x(f32 angle);
 mat4 mat4_euler_y(f32 angle);
 mat4 mat4_euler_z(f32 angle);
-mat4 mat4_euler_xyz(f32 x, f32 y, f32 z);
+mat4 mat4_euler_xyz(vec3 angles);
 
 // -- Quaternion type --
 #define quat_identity (quat) { 0.0f, 0.0f, 0.0f, 1.0f }

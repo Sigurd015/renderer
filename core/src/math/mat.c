@@ -20,18 +20,18 @@ mat4 mat4_mul(mat4 left, mat4 right)
 	f32* dest = (f32*)result.elements;
 	f32* l = (f32*)left.elements;
 	f32* r = (f32*)right.elements;
-	for (u32 i = 0; i < 4; i++)
+
+	for (u32 j = 0; j < 4; j++)
 	{
-		for (u32 j = 0; j < 4; j++)
+		for (u32 i = 0; i < 4; i++)
 		{
 			dest[0] =
-				l[0] * r[0 + j] +
-				l[1] * r[4 + j] +
-				l[2] * r[8 + j] +
-				l[3] * r[12 + j];
+				l[i] * r[j * 4 + 0] +
+				l[i + 4] * r[j * 4 + 1] +
+				l[i + 8] * r[j * 4 + 2] +
+				l[i + 12] * r[j * 4 + 3];
 			dest++;
 		}
-		l += 4;
 	}
 	return result;
 }
@@ -266,11 +266,11 @@ mat4 mat4_euler_z(f32 angle)
 	return result;
 }
 
-mat4 mat4_euler_xyz(f32 x, f32 y, f32 z)
+mat4 mat4_euler_xyz(vec3 angles)
 {
-	mat4 rx = mat4_euler_x(x);
-	mat4 ry = mat4_euler_y(y);
-	mat4 rz = mat4_euler_z(z);
+	mat4 rx = mat4_euler_x(angles.x);
+	mat4 ry = mat4_euler_y(angles.y);
+	mat4 rz = mat4_euler_z(angles.z);
 
 	mat4 result = mat4_mul(rx, ry);
 	result = mat4_mul(result, rz);
